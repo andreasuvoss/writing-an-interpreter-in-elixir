@@ -1,6 +1,4 @@
 defmodule InterpreterTest do
-  alias InterpreterTest.Lol
-  alias Lexer.Token
   alias Lexer.Lexer
   use ExUnit.Case
   doctest Interpreter
@@ -105,5 +103,65 @@ defmodule InterpreterTest do
     ]
 
     assert Lexer.tokenize(input) == tests
+  end
+
+  test "let statements" do
+    input = """
+    let x = 5;
+    let y = 10;
+    let foobar = 838383;
+    """
+
+    tokens = Lexer.tokenize(input)
+
+    # IO.inspect(tokens)
+
+    # {parsed, tokens} = Parser.Parser.parse(tokens)
+
+    program = Parser.Parser.parse_program(tokens)
+
+    # IO.inspect(program)
+
+
+    tests = [
+      "x",
+      "y",
+      "foobar"
+    ]
+
+    assert length(program.statements) == 3
+
+    Enum.zip(program.statements, tests)
+    |> Enum.each(fn {statement, expected} ->
+      # assert statement |> Parser.Statement.token_literal() == "let"
+      assert statement.token.type == :let
+      assert statement.name.value == expected
+    end)
+  end
+
+  test "return statements" do
+    input = """
+      return 5;
+      return 10;
+      return 993322;
+    """
+
+    tokens = Lexer.tokenize(input)
+
+    program = Parser.Parser.parse_program(tokens)
+
+    tests = [
+      "5",
+      "10",
+      "993322"
+    ]
+
+    assert length(program.statements) == 3
+
+    Enum.zip(program.statements, tests)
+    |> Enum.each(fn {statement, _} ->
+      assert statement |> Parser.Statement.token_literal() == "return"
+      assert statement.token.type== :return
+    end)
   end
 end

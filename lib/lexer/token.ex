@@ -1,3 +1,5 @@
+# TODO: Look into how this can be 
+
 defmodule Lexer.Token do
   # @typedoc "Type of token"
   # @type token_type() :: String.t()
@@ -27,14 +29,14 @@ defmodule Lexer.Token do
 
   def lookup_identifier(identifier) do
     case identifier do
-      "fn" -> %{type: :function, literal: identifier}
-      "let" -> %{type: :let, literal: identifier}
-      "return" -> %{type: :return, literal: identifier}
-      "if" -> %{type: :if, literal: identifier}
-      "else" -> %{type: :else, literal: identifier}
-      "true" -> %{type: :true, literal: identifier}
-      "false" -> %{type: :false, literal: identifier}
-      _ -> %{type: :ident, literal: identifier}
+      "fn" -> %Lexer.Token{type: :function, literal: identifier}
+      "let" -> %Lexer.Token{type: :let, literal: identifier}
+      "return" -> %Lexer.Token{type: :return, literal: identifier}
+      "if" -> %Lexer.Token{type: :if, literal: identifier}
+      "else" -> %Lexer.Token{type: :else, literal: identifier}
+      "true" -> %Lexer.Token{type: :true, literal: identifier}
+      "false" -> %Lexer.Token{type: :false, literal: identifier}
+      _ -> %Lexer.Token{type: :ident, literal: identifier}
     end
   end
 end
