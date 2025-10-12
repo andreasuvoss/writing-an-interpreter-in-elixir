@@ -1,5 +1,5 @@
 defmodule Lexer.Token do
-  @typedoc "Type of token"
+  # @typedoc "Type of token"
   # @type token_type() :: String.t()
 
   defstruct type: "", literal: ""

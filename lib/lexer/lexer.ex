@@ -13,7 +13,7 @@ defmodule Lexer.Lexer do
     "0" <= char && char <= "9"
   end
 
-  def read_identifier(input, i \\ 1) do
+  defp read_identifier(input, i \\ 1) do
     char = String.at(input, i)
 
     if is_letter(char) do
@@ -23,7 +23,7 @@ defmodule Lexer.Lexer do
     end
   end
 
-  def read_number(input, i \\ 1) do
+  defp read_number(input, i \\ 1) do
     char = String.at(input, i)
 
     if is_digit(char) do
@@ -33,7 +33,7 @@ defmodule Lexer.Lexer do
     end
   end
 
-  def get_token(input) do
+  defp get_token(input) do
     # Consume whitespace
     input = String.trim_leading(input)
     char = input |> String.at(0)
