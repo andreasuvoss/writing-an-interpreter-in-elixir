@@ -3,7 +3,7 @@ defmodule Repl.Repl do
     IO.write(">> ")
     input = IO.read(:line)
     case input do
-      "q\n" -> nil
+      ":q\n" -> nil
       _ -> 
         tokens = Lexer.Lexer.tokenize(String.trim(input))
         tokens |> Enum.each(fn x -> IO.inspect(x) end)
