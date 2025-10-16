@@ -1,4 +1,5 @@
 defprotocol Parser.Statement do
   def token_literal(statement)
-  def node(node)
+  def string(statement)
+  def statement_node(node)
 end

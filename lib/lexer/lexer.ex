@@ -115,11 +115,11 @@ defmodule Lexer.Lexer do
     end
   end
 
-  defp new_token(:eof, _, _), do: {%{type: :eof, literal: ""}, nil}
+  defp new_token(:eof, _, _), do: {%Token{type: :eof, literal: ""}, nil}
 
   defp new_token(type, literal, input) do
     literal_length = String.length(literal)
-    {%{type: type, literal: literal}, String.slice(input, literal_length..String.length(input))}
+    {%Token{type: type, literal: literal}, String.slice(input, literal_length..String.length(input))}
   end
 
   def tokenize(input) do
@@ -127,70 +127,3 @@ defmodule Lexer.Lexer do
     if tok.type == :eof, do: [tok], else: [tok | tokenize(rest)]
   end
 end
-
-# Notes / rubbish
-
-# true ->
-#   case {char, char1} do
-#     # {"=", "="} ->
-#     #   new_token(:eq, char<>char1, input)
-#     # {"!", "="} ->
-#     #   new_token(:not_eq, char<>char1, input)
-#
-#     {"=", _} ->
-#       peeked_char = input |> String.at(1)
-#       if peeked_char == "=" do
-#         new_token(:eq, char<>peeked_char, input)
-#       else
-#         new_token(:assign, char, input)
-#       end
-#     {"+", _} ->
-#       new_token(:plus, char, input)
-#
-#     {"(", _} ->
-#       new_token(:lparen, char, input)
-#
-#     {")", _} ->
-#       new_token(:rparen, char, input)
-#
-#     {"{", _} ->
-#       new_token(:lbrace, char, input)
-#
-#     {"}", _} ->
-#       new_token(:rbrace, char, input)
-#
-#     {",", _} ->
-#       new_token(:comma, char, input)
-#
-#     {";", _} ->
-#       new_token(:semicolon, char, input)
-#
-#     {"-", _} ->
-#       new_token(:minus, char, input)
-#
-#     {"/", _} ->
-#       new_token(:slash, char, input)
-#
-#     {"<", _} ->
-#       new_token(:lt, char, input)
-#
-#     {">", _} ->
-#       new_token(:gt, char, input)
-#
-#     {"*", _} ->
-#       new_token(:asterix, char, input)
-#
-#     {"!", _} ->
-#       peeked_char = input |> String.at(1)
-#       if peeked_char == "=" do
-#         new_token(:not_eq, char<>peeked_char, input)
-#       else
-#         new_token(:bang, char, input)
-#       end
-#
-#     {nil, nil} ->
-#       new_token(:eof, nil, input)
-#
-#     {x, _} ->
-#       new_token(:illegal, x, input)
-#   end

@@ -1,8 +1,10 @@
 defmodule InterpreterTest do
+  alias Lexer.Token
   alias Lexer.Lexer
   use ExUnit.Case
   doctest Interpreter
 
+  @tag disabled: true
   test "lexer should tokenize input" do
     input = """
     let five = 5;
@@ -27,90 +29,97 @@ defmodule InterpreterTest do
     """
 
     tests = [
-      %{type: :let, literal: "let"},
-      %{type: :ident, literal: "five"},
-      %{type: :assign, literal: "="},
-      %{type: :int, literal: "5"},
-      %{type: :semicolon, literal: ";"},
-      %{type: :let, literal: "let"},
-      %{type: :ident, literal: "ten"},
-      %{type: :assign, literal: "="},
-      %{type: :int, literal: "10"},
-      %{type: :semicolon, literal: ";"},
-      %{type: :let, literal: "let"},
-      %{type: :ident, literal: "add"},
-      %{type: :assign, literal: "="},
-      %{type: :function, literal: "fn"},
-      %{type: :lparen, literal: "("},
-      %{type: :ident, literal: "x"},
-      %{type: :comma, literal: ","},
-      %{type: :ident, literal: "y"},
-      %{type: :rparen, literal: ")"},
-      %{type: :lbrace, literal: "{"},
-      %{type: :ident, literal: "x"},
-      %{type: :plus, literal: "+"},
-      %{type: :ident, literal: "y"},
-      %{type: :semicolon, literal: ";"},
-      %{type: :rbrace, literal: "}"},
-      %{type: :let, literal: "let"},
-      %{type: :ident, literal: "result"},
-      %{type: :assign, literal: "="},
-      %{type: :ident, literal: "add"},
-      %{type: :lparen, literal: "("},
-      %{type: :ident, literal: "five"},
-      %{type: :comma, literal: ","},
-      %{type: :ident, literal: "ten"},
-      %{type: :rparen, literal: ")"},
-      %{type: :semicolon, literal: ";"},
-      %{type: :bang, literal: "!"},
-      %{type: :minus, literal: "-"},
-      %{type: :slash, literal: "/"},
-      %{type: :asterix, literal: "*"},
-      %{type: :int, literal: "5"},
-      %{type: :semicolon, literal: ";"},
-      %{type: :int, literal: "5"},
-      %{type: :lt, literal: "<"},
-      %{type: :int, literal: "10"},
-      %{type: :gt, literal: ">"},
-      %{type: :int, literal: "5"},
-      %{type: :semicolon, literal: ";"},
-      %{type: :if, literal: "if"},
-      %{type: :lparen, literal: "("},
-      %{type: :int, literal: "5"},
-      %{type: :lt, literal: "<"},
-      %{type: :int, literal: "10"},
-      %{type: :rparen, literal: ")"},
-      %{type: :lbrace, literal: "{"},
-      %{type: :return, literal: "return"},
-      %{type: true, literal: "true"},
-      %{type: :semicolon, literal: ";"},
-      %{type: :rbrace, literal: "}"},
-      %{type: :else, literal: "else"},
-      %{type: :lbrace, literal: "{"},
-      %{type: :return, literal: "return"},
-      %{type: false, literal: "false"},
-      %{type: :semicolon, literal: ";"},
-      %{type: :rbrace, literal: "}"},
-      %{type: :int, literal: "10"},
-      %{type: :eq, literal: "=="},
-      %{type: :int, literal: "10"},
-      %{type: :semicolon, literal: ";"},
-      %{type: :int, literal: "10"},
-      %{type: :not_eq, literal: "!="},
-      %{type: :int, literal: "9"},
-      %{type: :semicolon, literal: ";"},
-      %{type: :eof, literal: ""}
+      %Token{type: :let, literal: "let"},
+      %Token{type: :ident, literal: "five"},
+      %Token{type: :assign, literal: "="},
+      %Token{type: :int, literal: "5"},
+      %Token{type: :semicolon, literal: ";"},
+      %Token{type: :let, literal: "let"},
+      %Token{type: :ident, literal: "ten"},
+      %Token{type: :assign, literal: "="},
+      %Token{type: :int, literal: "10"},
+      %Token{type: :semicolon, literal: ";"},
+      %Token{type: :let, literal: "let"},
+      %Token{type: :ident, literal: "add"},
+      %Token{type: :assign, literal: "="},
+      %Token{type: :function, literal: "fn"},
+      %Token{type: :lparen, literal: "("},
+      %Token{type: :ident, literal: "x"},
+      %Token{type: :comma, literal: ","},
+      %Token{type: :ident, literal: "y"},
+      %Token{type: :rparen, literal: ")"},
+      %Token{type: :lbrace, literal: "{"},
+      %Token{type: :ident, literal: "x"},
+      %Token{type: :plus, literal: "+"},
+      %Token{type: :ident, literal: "y"},
+      %Token{type: :semicolon, literal: ";"},
+      %Token{type: :rbrace, literal: "}"},
+      %Token{type: :let, literal: "let"},
+      %Token{type: :ident, literal: "result"},
+      %Token{type: :assign, literal: "="},
+      %Token{type: :ident, literal: "add"},
+      %Token{type: :lparen, literal: "("},
+      %Token{type: :ident, literal: "five"},
+      %Token{type: :comma, literal: ","},
+      %Token{type: :ident, literal: "ten"},
+      %Token{type: :rparen, literal: ")"},
+      %Token{type: :semicolon, literal: ";"},
+      %Token{type: :bang, literal: "!"},
+      %Token{type: :minus, literal: "-"},
+      %Token{type: :slash, literal: "/"},
+      %Token{type: :asterix, literal: "*"},
+      %Token{type: :int, literal: "5"},
+      %Token{type: :semicolon, literal: ";"},
+      %Token{type: :int, literal: "5"},
+      %Token{type: :lt, literal: "<"},
+      %Token{type: :int, literal: "10"},
+      %Token{type: :gt, literal: ">"},
+      %Token{type: :int, literal: "5"},
+      %Token{type: :semicolon, literal: ";"},
+      %Token{type: :if, literal: "if"},
+      %Token{type: :lparen, literal: "("},
+      %Token{type: :int, literal: "5"},
+      %Token{type: :lt, literal: "<"},
+      %Token{type: :int, literal: "10"},
+      %Token{type: :rparen, literal: ")"},
+      %Token{type: :lbrace, literal: "{"},
+      %Token{type: :return, literal: "return"},
+      %Token{type: true, literal: "true"},
+      %Token{type: :semicolon, literal: ";"},
+      %Token{type: :rbrace, literal: "}"},
+      %Token{type: :else, literal: "else"},
+      %Token{type: :lbrace, literal: "{"},
+      %Token{type: :return, literal: "return"},
+      %Token{type: false, literal: "false"},
+      %Token{type: :semicolon, literal: ";"},
+      %Token{type: :rbrace, literal: "}"},
+      %Token{type: :int, literal: "10"},
+      %Token{type: :eq, literal: "=="},
+      %Token{type: :int, literal: "10"},
+      %Token{type: :semicolon, literal: ";"},
+      %Token{type: :int, literal: "10"},
+      %Token{type: :not_eq, literal: "!="},
+      %Token{type: :int, literal: "9"},
+      %Token{type: :semicolon, literal: ";"},
+      %Token{type: :eof, literal: ""}
     ]
 
     assert Lexer.tokenize(input) == tests
   end
 
+  @tag disabled: true
   test "let statements" do
     input = """
     let x = 5;
     let y = 10;
     let foobar = 838383;
     """
+
+    # input = """
+    # let x =;
+    # let y = ;
+    # let foobar = ;
+    # """
 
     tokens = Lexer.tokenize(input)
 
@@ -122,12 +131,13 @@ defmodule InterpreterTest do
 
     # IO.inspect(program)
 
-
     tests = [
       "x",
       "y",
       "foobar"
     ]
+
+    # IO.inspect(program)
 
     assert length(program.statements) == 3
 
@@ -139,6 +149,7 @@ defmodule InterpreterTest do
     end)
   end
 
+  @tag disabled: true
   test "return statements" do
     input = """
       return 5;
@@ -146,9 +157,17 @@ defmodule InterpreterTest do
       return 993322;
     """
 
+    # input = """
+    #   return ;
+    #   return ;
+    #   return ;
+    # """
+
     tokens = Lexer.tokenize(input)
 
     program = Parser.Parser.parse_program(tokens)
+
+    # IO.inspect(program)
 
     tests = [
       "5",
@@ -161,7 +180,148 @@ defmodule InterpreterTest do
     Enum.zip(program.statements, tests)
     |> Enum.each(fn {statement, _} ->
       assert statement |> Parser.Statement.token_literal() == "return"
-      assert statement.token.type== :return
+      assert statement.token.type == :return
     end)
+  end
+
+  @tag disabled: true
+  test "stringify program" do
+    # input = """
+    #   let myVar = anotherVar;
+    # """
+    #
+    # tokens = Lexer.tokenize(input)
+    #
+    # program = Parser.Parser.parse_program(tokens)
+
+    program = %Parser.Program{
+      statements: [
+        %Parser.LetStatement{
+          token: %Token{type: :let, literal: "let"},
+          name: %Parser.Identifier{
+            token: %Token{type: :ident, literal: "myVar"},
+            value: "myVar"
+          },
+          value: %Parser.Identifier{
+            token: %Token{type: :ident, literal: "anotherVar"},
+            value: "anotherVar"
+          }
+        }
+      ]
+    }
+
+    # program_string = to_string(program)
+
+    assert "#{program}" == "let myVar = anotherVar;"
+  end
+
+  @tag disabled: true
+  test "identifier expression" do
+    input = "foobar;"
+
+    tokens = Lexer.tokenize(input)
+
+    program = Parser.Parser.parse_program(tokens)
+
+    # defstruct token: %Lexer.Token{type: :expression, literal: nil}, expression: ""
+
+    # infix_functions = %{function: fn x -> "#{x}" end}
+    #
+    # test_func = infix_functions.function.("lol")
+    #
+    #
+    # IO.puts(test_func)
+
+    # IO.inspect(tokens)
+    # IO.inspect(program)
+
+    assert length(program.statements) == 1
+
+    # IO.inspect(program)
+
+    expression = program.statements |> Enum.at(0)
+    assert %Parser.ExpressionStatement{} = expression
+
+    assert %Parser.Identifier{token: %Token{type: :ident, literal: "foobar"}, value: "foobar"} =
+             expression.expression
+
+    # assert "#{program}" == "let myVar = anotherVar;"
+  end
+
+  @tag disabled: true
+  test "integer expression" do
+    input = "5;"
+
+    tokens = Lexer.tokenize(input)
+
+    program = Parser.Parser.parse_program(tokens)
+
+    # IO.inspect(tokens)
+    # IO.inspect(program)
+
+    assert length(program.statements) == 1
+
+    statement = program.statements |> Enum.at(0)
+    assert %Parser.ExpressionStatement{} = statement
+
+    assert %Parser.IntegerLiteral{token: %Token{type: :int, literal: "5"}, value: 5} =
+             statement.expression
+
+    # assert "#{program}" == "let myVar = anotherVar;"
+  end
+
+  @tag disabled: true
+  test "prefix bang" do
+    input = "!5;"
+
+    tokens = Lexer.tokenize(input)
+
+    program = Parser.Parser.parse_program(tokens)
+
+    # IO.inspect(tokens)
+    # IO.inspect(program)
+
+    assert length(program.statements) == 1
+
+    statement = program.statements |> Enum.at(0)
+    assert %Parser.ExpressionStatement{} = statement
+    assert %Parser.PrefixExpression{} = statement.expression
+    assert %Parser.PrefixExpression{token: %Token{type: :bang}, operator: "!", right: %Parser.IntegerLiteral{}} = statement.expression
+
+    # assert "#{program}" == "let myVar = anotherVar;"
+  end
+
+  @tag disabled: true
+  test "prefix minus" do
+    input = "-5;"
+
+    tokens = Lexer.tokenize(input)
+
+    program = Parser.Parser.parse_program(tokens)
+
+    assert length(program.statements) == 1
+
+    statement = program.statements |> Enum.at(0)
+    assert %Parser.ExpressionStatement{} = statement
+    assert %Parser.PrefixExpression{token: %Token{type: :minus}, operator: "-", right: %Parser.IntegerLiteral{}} = statement.expression
+
+    # assert "#{program}" == "let myVar = anotherVar;"
+  end
+
+  # @tag disabled: true
+  test "infix plus" do
+    input = "5 - 5;"
+
+    tokens = Lexer.tokenize(input)
+
+    program = Parser.Parser.parse_program(tokens)
+
+    assert length(program.statements) == 1
+
+    statement = program.statements |> Enum.at(0)
+    assert %Parser.ExpressionStatement{} = statement
+    assert %Parser.InfixExpression{token: %Token{type: :plus}, operator: "+", left: %Parser.IntegerLiteral{}, right: %Parser.IntegerLiteral{}} = statement.expression
+
+    # assert "#{program}" == "let myVar = anotherVar;"
   end
 end

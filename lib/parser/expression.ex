@@ -1,5 +1,5 @@
-defmodule Parser.Expression do
-  # alias Parser.Node
-  # require Node
-  # defstruct node: %Node{token_literal: ""}
+defprotocol Parser.Expression do
+  def token_literal(expression)
+  def string(expression)
+  def expression_node(node)
 end
