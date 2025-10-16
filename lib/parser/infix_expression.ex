@@ -12,7 +12,13 @@ defmodule Parser.InfixExpression do
       "(#{string(expression.left)} #{expression.operator} #{string(expression.right)})"
     end
 
-    def expression_node(node) do
+    def expression_node(_) do
+    end
+  end
+
+  defimpl String.Chars, for: Parser.InfixExpression  do
+    def to_string(%Parser.InfixExpression{left: l, operator: op, right: r}) do
+      "(#{l} #{op} #{r})"
     end
   end
 end

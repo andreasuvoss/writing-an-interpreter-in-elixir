@@ -11,13 +11,13 @@ defmodule Parser.IntegerLiteral do
       expression.value
     end
 
-    def expression_node(node) do
+    def expression_node(_) do
     end
   end
 
   defimpl String.Chars, for: Parser.IntegerLiteral do
     def to_string(%Parser.IntegerLiteral{value: value}) do
-      value
+      "#{value}"
     end
   end
 end

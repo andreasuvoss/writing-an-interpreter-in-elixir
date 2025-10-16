@@ -18,5 +18,15 @@ defmodule Parser.ExpressionStatement do
       nil
     end
   end
+
+  defimpl String.Chars, for: Parser.ExpressionStatement do
+    def to_string(%Parser.ExpressionStatement{expression: nil}) do
+      ""
+    end
+
+    def to_string(%Parser.ExpressionStatement{expression: exp}) do
+      "#{exp}"
+    end
+  end
   
 end

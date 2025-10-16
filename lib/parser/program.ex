@@ -3,7 +3,7 @@ defmodule Parser.Program do
 
   defimpl String.Chars, for: Parser.Program do
     def to_string(%Parser.Program{} = program) do
-      program.statements |> Enum.map(fn s -> Parser.Statement.string(s) end) |> Enum.join("\n")
+      program.statements |> Enum.map(fn s -> "#{s}" end) |> Enum.join("")
     end
   end
 end

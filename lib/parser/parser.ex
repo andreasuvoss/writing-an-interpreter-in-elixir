@@ -1,5 +1,7 @@
 defmodule Parser.Parser do
+  alias Parser.Boolean
   alias Parser.PrefixExpression
+  alias Parser.InfixExpression
   alias Parser.IntegerLiteral
   alias Lexer.Token
   alias Parser.LetStatement
@@ -38,7 +40,6 @@ defmodule Parser.Parser do
 
   def parse_program(tokens) do
     {statements, _} = parse_statements(tokens, [])
-    # IO.inspect(statements)
 
     %Parser.Program{statements: Enum.reverse(statements)}
   end
@@ -48,7 +49,6 @@ defmodule Parser.Parser do
   def parse_statements([%Token{type: :semicolon} | tail], acc), do: parse_statements(tail, acc)
 
   def parse_statements([%Token{type: :let} | tail], acc) do
-    # IO.puts("parsing let")
     case parse_let_statement(tail) do
       {:ok, stmt, rest} -> parse_statements(rest, [stmt | acc])
       {:error, err} -> raise err
@@ -56,7 +56,6 @@ defmodule Parser.Parser do
   end
 
   def parse_statements([%Token{type: :return} | tail], acc) do
-    # IO.puts("parsing return")
     case parse_return_statement(tail) do
       {:ok, stmt, rest} -> parse_statements(rest, [stmt | acc])
       {:error, err} -> raise err
@@ -64,29 +63,17 @@ defmodule Parser.Parser do
   end
 
   def parse_statements([%Token{type: _} = head | tail], acc) do
-    # IO.puts("parsing exp")
     case parse_expression_statement([head | tail]) do
       {:ok, stmt, rest} ->
         parse_statements(rest, [stmt | acc])
-        # {:error, err} -> raise err
     end
   end
 
   def parse_expression_statement([head | tail]) do
-    # IO.inspect([head | tail])
     case parse_expression([head | tail]) do
-      {_, expr, [%Token{type: :semicolon} | tl]} ->
-        {:ok, %Parser.ExpressionStatement{expression: expr}, tl}
-
-      {_, expr, tl} ->
-        {:ok, %Parser.ExpressionStatement{expression: expr}, tl}
-        # {_, expr, tl} -> 
-        #  # IO.inspect(tl)
-        #  {:ok, %Parser.ExpressionStatement{expression: expr}, tl}
+      {_, expr, [%Token{type: :semicolon} | tl]} -> {:ok, %Parser.ExpressionStatement{expression: expr}, tl}
+      {_, expr, tl} -> {:ok, %Parser.ExpressionStatement{expression: expr}, tl}
     end
-
-    # {_, expr, tl} = parse_expression([head | tail])
-    # {:ok, %Parser.ExpressionStatement{expression: expr}, tl}
   end
 
   def parse_let_statement([
@@ -103,16 +90,12 @@ defmodule Parser.Parser do
            },
            value: value
          }, rest}
-
-      _ ->
-        {:error, "some error"}
     end
   end
 
   def parse_let_statement([%Token{type: :eof} | _]), do: {:error, "nothing after let statement"}
 
-  def parse_let_statement([%Token{type: :ident}, _ | _]),
-    do: {:error, "nothing after let statement"}
+  def parse_let_statement([%Token{type: :ident}, _ | _]), do: {:error, "nothing after let statement"}
 
   def parse_let_statement([]), do: {:error, "nothing after let statement"}
 
@@ -127,13 +110,19 @@ defmodule Parser.Parser do
   end
 
   def parse_identifier([%Token{type: :ident} = token | tail]) do
-    # IO.puts("parsing identifier")
     {:ok, %Identifier{token: token, value: token.literal}, tail}
   end
 
   def parse_integer_literal([%Token{type: :int} = token | tail]) do
-    # IO.puts("int")
     {:ok, %IntegerLiteral{token: token, value: String.to_integer(token.literal)}, tail}
+  end
+
+  def parse_boolean([%Token{type: :true} = token | tail]) do
+    {:ok, %Boolean{token: token, value: true}, tail}
+  end
+
+  def parse_boolean([%Token{type: :false} = token | tail]) do
+    {:ok, %Boolean{token: token, value: false}, tail}
   end
 
   def parse_prefix_expression([%Token{} = token | tail]) do
@@ -141,37 +130,54 @@ defmodule Parser.Parser do
     {:ok, %PrefixExpression{token: token, operator: token.literal, right: right}, tl}
   end
 
-  def parse_infix_expression(left, [token | tail]) do
 
-    
+  def parse_grouped_expression([%Token{type: :lparen} | tail]) do
+    {_, expr, [peek_token | rest]} = parse_expression(tail, :lowest)
 
-  end
-
-  # TODO: Everything is a god damn prefix in this town (:
-  def parse_expression([token, peek_token | tokens_tail], precedence \\ :_) do
-    IO.puts(token.type)
-
-    case token.type do
-      :ident ->
-        parse_identifier([token | tokens_tail])
-
-      :int ->
-        parse_integer_literal([token, peek_token | tokens_tail])
-
-      :bang ->
-        parse_prefix_expression([token, peek_token | tokens_tail])
-
-      :minus ->
-        parse_prefix_expression([token, peek_token | tokens_tail])
-
-      :semicolon ->
-        {:ok, [peek_token | tokens_tail]}
-        # _ -> parse_expression([peek_token | tokens_tail])
+    if peek_token.type != :rparen do
+      {:ok, nil, rest}
+    else
+      {:ok, expr, rest}
     end
   end
 
+  defp parse_prefix([%Token{type: :bang} | _] = tokens), do: parse_prefix_expression(tokens)
+  defp parse_prefix([%Token{type: :minus} | _] = tokens), do: parse_prefix_expression(tokens)
+  defp parse_prefix([%Token{type: :plus} | _] = tokens), do: parse_prefix_expression(tokens)
+  defp parse_prefix([%Token{type: :gt} | _] = tokens), do: parse_prefix_expression(tokens)
+  defp parse_prefix([%Token{type: :lt} | _] = tokens), do: parse_prefix_expression(tokens)
+  defp parse_prefix([%Token{type: :eq} | _] = tokens), do: parse_prefix_expression(tokens)
+  defp parse_prefix([%Token{type: :not_eq} | _] = tokens), do: parse_prefix_expression(tokens)
+  defp parse_prefix([%Token{type: :lparen} | _] = tokens), do: parse_grouped_expression(tokens)
+  defp parse_prefix([%Token{type: :int} | _] = tokens), do: parse_integer_literal(tokens)
+  defp parse_prefix([%Token{type: :ident} | _] = tokens), do: parse_identifier(tokens)
+  defp parse_prefix([%Token{type: :true} | _] = tokens), do: parse_boolean(tokens)
+  defp parse_prefix([%Token{type: :false} | _] = tokens), do: parse_boolean(tokens)
+
+  def parse_infix_expression(node, [], _), do: {:ok, node, []}
+  def parse_infix_expression(node, [%Token{type: :eof} | _], _), do: {:ok, node, []}
+  def parse_infix_expression(left, [%Token{} = token, %Token{} = peek_token | tail] = rest, precedence) do
+    current_precedence = precedence_of(token)
+
+    if current_precedence > precedence and infix_operator?(token) do
+      {:ok, right, rest} = parse_expression([peek_token | tail], decode(current_precedence))
+      infix = %InfixExpression{token: token, left: left, operator: token.literal, right: right}
+      parse_infix_expression(infix, rest, precedence)
+    else
+      {:ok, left, rest}
+    end
+  end
+
+
+  def parse_expression(tokens, precedence \\ :_) do
+
+    {:ok, left, rest} = parse_prefix(tokens)
+
+    parse_infix_expression(left, rest, encode(precedence))
+  end
+
   def infix_operator?(%Token{type: t}) do
-    t in [:plus, :minus, :asterix, :slash, :gt, :th, :eq, :not_eq]
+    t in [:plus, :minus, :asterix, :slash, :gt, :lt, :eq, :not_eq]
   end
 
 end

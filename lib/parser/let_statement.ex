@@ -19,5 +19,15 @@ defmodule Parser.LetStatement do
       nil
     end
   end
+
+  defimpl String.Chars, for: Parser.LetStatement do
+    def to_string(%Parser.LetStatement{token: token, name: name, value: nil}) do
+      "#{token.literal} #{name.token.literal} = ;"
+    end
+
+    def to_string(%Parser.LetStatement{token: token, name: name, value: value}) do
+      "#{token.literal} #{name.token.literal} = #{value};"
+    end
+  end
   
 end

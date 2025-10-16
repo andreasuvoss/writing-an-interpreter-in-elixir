@@ -286,7 +286,12 @@ defmodule InterpreterTest do
     statement = program.statements |> Enum.at(0)
     assert %Parser.ExpressionStatement{} = statement
     assert %Parser.PrefixExpression{} = statement.expression
-    assert %Parser.PrefixExpression{token: %Token{type: :bang}, operator: "!", right: %Parser.IntegerLiteral{}} = statement.expression
+
+    assert %Parser.PrefixExpression{
+             token: %Token{type: :bang},
+             operator: "!",
+             right: %Parser.IntegerLiteral{}
+           } = statement.expression
 
     # assert "#{program}" == "let myVar = anotherVar;"
   end
@@ -303,14 +308,81 @@ defmodule InterpreterTest do
 
     statement = program.statements |> Enum.at(0)
     assert %Parser.ExpressionStatement{} = statement
-    assert %Parser.PrefixExpression{token: %Token{type: :minus}, operator: "-", right: %Parser.IntegerLiteral{}} = statement.expression
+
+    assert %Parser.PrefixExpression{
+             token: %Token{type: :minus},
+             operator: "-",
+             right: %Parser.IntegerLiteral{}
+           } = statement.expression
 
     # assert "#{program}" == "let myVar = anotherVar;"
   end
 
-  # @tag disabled: true
+  @tag disabled: true
   test "infix plus" do
-    input = "5 - 5;"
+    input = "5 + 5;"
+
+    tokens = Lexer.tokenize(input)
+
+    program = Parser.Parser.parse_program(tokens)
+
+    # IO.inspect(program)
+
+    # IO.puts(program)
+
+    assert length(program.statements) == 1
+
+    statement = program.statements |> Enum.at(0)
+    assert %Parser.ExpressionStatement{} = statement
+
+    assert %Parser.InfixExpression{
+             token: %Token{type: :plus},
+             operator: "+",
+             left: %Parser.IntegerLiteral{},
+             right: %Parser.IntegerLiteral{}
+           } = statement.expression
+
+    # assert "#{program}" == "let myVar = anotherVar;"
+  end
+
+  @tag disabled: true
+  test "precedence" do
+    tests = [
+      %{input: "-a * b", expected: "((-a) * b)"},
+      %{input: "!-a", expected: "(!(-a))"},
+      %{input: "a + b + c", expected: "((a + b) + c)"},
+      %{input: "a + b - c", expected: "((a + b) - c)"},
+      %{input: "a * b * c", expected: "((a * b) * c)"},
+      %{input: "a * b / c", expected: "((a * b) / c)"},
+      %{input: "a + b / c", expected: "(a + (b / c))"},
+      %{input: "a + b * c + d / e - f", expected: "(((a + (b * c)) + (d / e)) - f)"},
+      %{input: "3 + 4; -5 * 5", expected: "(3 + 4)((-5) * 5)"},
+      %{input: "5 > 4 == 3 < 4", expected: "((5 > 4) == (3 < 4))"},
+      %{input: "5 > 4 != 3 < 4", expected: "((5 > 4) != (3 < 4))"},
+      %{input: "3 + 4 * 5 == 3 * 1 + 4 * 5", expected: "((3 + (4 * 5)) == ((3 * 1) + (4 * 5)))"},
+      %{input: "true", expected: "true"},
+      %{input: "false", expected: "false"},
+      %{input: "3 > 5 == false", expected: "((3 > 5) == false)"},
+      %{input: "3 < 5 == true", expected: "((3 < 5) == true)"},
+      %{input: "1 + (2 + 3) + 4", expected: "((1 + (2 + 3)) + 4)"},
+      %{input: "(5 + 5) * 2", expected: "((5 + 5) * 2)"},
+      %{input: "2 / (5 + 5)", expected: "(2 / (5 + 5))"},
+      %{input: "-(5 + 5)", expected: "(-(5 + 5))"},
+      %{input: "!(true == true)", expected: "(!(true == true))"},
+    ]
+
+    tests
+    |> Enum.each(fn test ->
+      tokens = Lexer.tokenize(test.input)
+      program = Parser.Parser.parse_program(tokens)
+
+      assert "#{program}" == test.expected
+    end)
+  end
+
+  @tag disabled: true
+  test "true boolean expression" do
+    input = "true;"
 
     tokens = Lexer.tokenize(input)
 
@@ -320,8 +392,36 @@ defmodule InterpreterTest do
 
     statement = program.statements |> Enum.at(0)
     assert %Parser.ExpressionStatement{} = statement
-    assert %Parser.InfixExpression{token: %Token{type: :plus}, operator: "+", left: %Parser.IntegerLiteral{}, right: %Parser.IntegerLiteral{}} = statement.expression
+    assert %Parser.Boolean{token: %Token{type: :true, literal: "true"}, value: true} = statement.expression
+  end
 
-    # assert "#{program}" == "let myVar = anotherVar;"
+  @tag disabled: true
+  test "false boolean expression" do
+    input = "false;"
+
+    tokens = Lexer.tokenize(input)
+
+    program = Parser.Parser.parse_program(tokens)
+
+    assert length(program.statements) == 1
+
+    statement = program.statements |> Enum.at(0)
+    assert %Parser.ExpressionStatement{} = statement
+    assert %Parser.Boolean{token: %Token{type: :false, literal: "false"}, value: false} = statement.expression
+  end
+
+  @tag disabled: true
+  test "let statement true boolean expression" do
+    input = "let foobar = true;"
+
+    tokens = Lexer.tokenize(input)
+
+    program = Parser.Parser.parse_program(tokens)
+
+    assert length(program.statements) == 1
+
+    statement = program.statements |> Enum.at(0)
+    assert %Parser.LetStatement{} = statement
+    assert %Parser.Boolean{token: %Token{type: :true, literal: "true"}, value: true} = statement.value
   end
 end

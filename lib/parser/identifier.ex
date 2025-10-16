@@ -4,7 +4,7 @@ defmodule Parser.Identifier do
 
   defimpl String.Chars, for: Parser.Identifier do
     def to_string(%Parser.Identifier{value: value}) do
-      value
+      "#{value}"
     end
     
   end
