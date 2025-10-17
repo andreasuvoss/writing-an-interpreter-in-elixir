@@ -1,4 +1,5 @@
 defmodule InterpreterTest do
+  alias Parser.InfixExpression
   alias Parser.Identifier
   alias Lexer.Token
   alias Lexer.Lexer
@@ -473,6 +474,122 @@ defmodule InterpreterTest do
              alternative: %Parser.BlockStatement{
                statements: [%Parser.ExpressionStatement{expression: %Identifier{value: "y"}}]
              }
+           } = statement.expression
+  end
+
+  @tag disabled: true
+  test "function literal" do
+    input = "fn(x, y) { x + y }"
+
+    tokens = Lexer.tokenize(input)
+
+    program = Parser.Parser.parse_program(tokens)
+
+    assert length(program.statements) == 1
+
+    statement = program.statements |> Enum.at(0)
+    assert %Parser.ExpressionStatement{} = statement
+
+    assert length(statement.expression.parameters) == 2
+    assert length(statement.expression.body.statements) == 1
+
+    assert %Parser.FunctionLiteral{
+             body: %Parser.BlockStatement{
+               statements: [
+                 %Parser.ExpressionStatement{
+                   expression: %InfixExpression{
+                     left: %Identifier{value: "x"},
+                     right: %Identifier{value: "y"},
+                     operator: "+"
+                   }
+                 }
+               ]
+             },
+             parameters: [%Identifier{value: "x"}, %Identifier{value: "y"}]
+           } = statement.expression
+  end
+
+  @tag disabled: true
+  test "function literal single parameter" do
+    input = "fn(x) { x }"
+
+    tokens = Lexer.tokenize(input)
+
+    program = Parser.Parser.parse_program(tokens)
+
+    assert length(program.statements) == 1
+
+    statement = program.statements |> Enum.at(0)
+    assert %Parser.ExpressionStatement{} = statement
+
+    assert length(statement.expression.parameters) == 1
+    assert length(statement.expression.body.statements) == 1
+
+    assert %Parser.FunctionLiteral{
+             body: %Parser.BlockStatement{
+               statements: [
+                 %Parser.ExpressionStatement{
+                   expression: %Identifier{value: "x"}
+                 }
+               ]
+             },
+             parameters: [%Identifier{value: "x"}]
+           } = statement.expression
+  end
+
+  @tag disabled: true
+  test "function literal no parameters" do
+    input = "fn() { x + y }"
+
+    tokens = Lexer.tokenize(input)
+
+    program = Parser.Parser.parse_program(tokens)
+
+    assert length(program.statements) == 1
+
+    statement = program.statements |> Enum.at(0)
+    assert %Parser.ExpressionStatement{} = statement
+
+    assert length(statement.expression.parameters) == 0
+    assert length(statement.expression.body.statements) == 1
+
+    assert %Parser.FunctionLiteral{
+             body: %Parser.BlockStatement{
+               statements: [
+                 %Parser.ExpressionStatement{
+                   expression: %InfixExpression{
+                     left: %Identifier{value: "x"},
+                     right: %Identifier{value: "y"},
+                     operator: "+"
+                   }
+                 }
+               ]
+             },
+             parameters: []
+           } = statement.expression
+  end
+
+  @tag disabled: true
+  test "function literal no parameters and empty body" do
+    input = "fn() { }"
+
+    tokens = Lexer.tokenize(input)
+
+    program = Parser.Parser.parse_program(tokens)
+
+    assert length(program.statements) == 1
+
+    statement = program.statements |> Enum.at(0)
+    assert %Parser.ExpressionStatement{} = statement
+
+    assert length(statement.expression.parameters) == 0
+    assert length(statement.expression.body.statements) == 0
+
+    assert %Parser.FunctionLiteral{
+             body: %Parser.BlockStatement{
+               statements: []
+             },
+             parameters: []
            } = statement.expression
   end
 end

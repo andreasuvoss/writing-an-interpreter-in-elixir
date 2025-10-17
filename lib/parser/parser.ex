@@ -1,4 +1,5 @@
 defmodule Parser.Parser do
+  alias Parser.FunctionLiteral
   alias Parser.BlockStatement
   alias Parser.IfExpression
   alias Parser.Boolean
@@ -192,6 +193,26 @@ defmodule Parser.Parser do
     end
   end
 
+  def parse_function_literal([_, peek_token | rest] = tokens) do
+    if peek_token.type != :lparen do
+      {:ok, nil, rest}
+    else
+      {:ok, params, rest} = parse_function_parameters(rest)
+      {:ok, statements, rest} = parse_block_statement(rest)
+      {:ok, %FunctionLiteral{parameters: params, body: statements}, rest}
+    end
+  end
+
+  defp parse_function_parameters([token | tokens], acc \\ []) do
+    case token.type do
+      :rparen -> {:ok, Enum.reverse(acc), tokens}
+      :comma -> parse_function_parameters(tokens, acc)
+      :ident -> 
+        {:ok, identifier, tokens} = parse_identifier([token | tokens])
+        parse_function_parameters(tokens, [identifier | acc])
+    end
+  end
+
   defp parse_prefix([%Token{type: :bang} | _] = tokens), do: parse_prefix_expression(tokens)
   defp parse_prefix([%Token{type: :minus} | _] = tokens), do: parse_prefix_expression(tokens)
   defp parse_prefix([%Token{type: :plus} | _] = tokens), do: parse_prefix_expression(tokens)
@@ -205,6 +226,7 @@ defmodule Parser.Parser do
   defp parse_prefix([%Token{type: true} | _] = tokens), do: parse_boolean(tokens)
   defp parse_prefix([%Token{type: false} | _] = tokens), do: parse_boolean(tokens)
   defp parse_prefix([%Token{type: :if} | _] = tokens), do: parse_if_expression(tokens)
+  defp parse_prefix([%Token{type: :function} | _] = tokens), do: parse_function_literal(tokens)
 
   def parse_infix_expression(node, [], _), do: {:ok, node, []}
   def parse_infix_expression(node, [%Token{type: :eof} | _], _), do: {:ok, node, []}
