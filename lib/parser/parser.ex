@@ -1,4 +1,5 @@
 defmodule Parser.Parser do
+  alias Parser.CallExpression
   alias Parser.FunctionLiteral
   alias Parser.BlockStatement
   alias Parser.IfExpression
@@ -37,6 +38,7 @@ defmodule Parser.Parser do
       :minus -> encode(:sum)
       :slash -> encode(:product)
       :asterix -> encode(:product)
+      :lparen-> encode(:call)
       _ -> encode(:lowest)
     end
   end
@@ -193,7 +195,7 @@ defmodule Parser.Parser do
     end
   end
 
-  def parse_function_literal([_, peek_token | rest] = tokens) do
+  def parse_function_literal([_, peek_token | rest]) do
     if peek_token.type != :lparen do
       {:ok, nil, rest}
     else
@@ -210,6 +212,25 @@ defmodule Parser.Parser do
       :ident -> 
         {:ok, identifier, tokens} = parse_identifier([token | tokens])
         parse_function_parameters(tokens, [identifier | acc])
+    end
+  end
+
+  defp parse_call_expression(function, [token | rest]) do
+    if token.type != :lparen do
+      {:ok, nil, rest}
+    else
+      {:ok, args, rest} = parse_call_arguments(rest)
+      {:ok, %CallExpression{token: token, function: function, arguments: args}, rest}
+    end
+  end
+
+  defp parse_call_arguments([token | tokens], acc \\ []) do
+    case token.type do
+      :rparen -> {:ok, Enum.reverse(acc), tokens}
+      :comma -> parse_call_arguments(tokens, acc)
+      _ -> 
+        {:ok, expr, tokens} = parse_expression([token | tokens], :lowest)
+        parse_call_arguments(tokens, [expr | acc])
     end
   end
 
@@ -231,17 +252,17 @@ defmodule Parser.Parser do
   def parse_infix_expression(node, [], _), do: {:ok, node, []}
   def parse_infix_expression(node, [%Token{type: :eof} | _], _), do: {:ok, node, []}
 
-  def parse_infix_expression(
-        left,
-        [%Token{} = token, %Token{} = peek_token | tail] = rest,
-        precedence
-      ) do
+  def parse_infix_expression(left, [%Token{} = token, %Token{} = peek_token | tail] = rest, precedence) do
     current_precedence = precedence_of(token)
 
     if current_precedence > precedence and infix_operator?(token) do
-      {:ok, right, rest} = parse_expression([peek_token | tail], decode(current_precedence))
-      infix = %InfixExpression{token: token, left: left, operator: token.literal, right: right}
-      parse_infix_expression(infix, rest, precedence)
+      if token.type == :lparen do
+        parse_call_expression(left, [token, peek_token | tail])
+      else
+        {:ok, right, rest} = parse_expression([peek_token | tail], decode(current_precedence))
+        infix = %InfixExpression{token: token, left: left, operator: token.literal, right: right}
+        parse_infix_expression(infix, rest, precedence)
+      end
     else
       {:ok, left, rest}
     end
@@ -254,6 +275,6 @@ defmodule Parser.Parser do
   end
 
   def infix_operator?(%Token{type: t}) do
-    t in [:plus, :minus, :asterix, :slash, :gt, :lt, :eq, :not_eq]
+    t in [:plus, :minus, :asterix, :slash, :gt, :lt, :eq, :not_eq, :lparen]
   end
 end

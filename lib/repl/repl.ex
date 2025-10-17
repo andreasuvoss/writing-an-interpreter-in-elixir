@@ -7,7 +7,8 @@ defmodule Repl.Repl do
       ":q\n" -> nil
       _ ->
         tokens = Lexer.Lexer.tokenize(String.trim(input))
-        tokens |> Enum.each(fn x -> IO.inspect(x) end)
+        program = Parser.Parser.parse_program(tokens)
+        IO.puts(program)
         loop()
     end
   end

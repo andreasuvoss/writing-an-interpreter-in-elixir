@@ -15,7 +15,7 @@ defmodule Parser.FunctionLiteral do
 
   defimpl String.Chars, for: Parser.FunctionLiteral  do
     def to_string(%Parser.FunctionLiteral{} = fl) do
-      params = fl.parameters |> Enum.each(fn p -> "#{p}" end) |> Enum.join(", ")
+      params = fl.parameters |> Enum.map(fn p -> "#{p}" end) |> Enum.join(", ")
       "#{fl.token.literal}(#{params}) #{fl.body}"
     end
   end

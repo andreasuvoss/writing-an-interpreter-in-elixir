@@ -10,17 +10,15 @@ repository's root directory
 ```sh
 mix run
 ```
-It just runs the lexer and prints out each token for a given input.
+In its current form it runs the lexer + parser and prints out the program as a string. There is no (or very poor) error
+handling, so if the syntax is not correct the REPL will crash.
 
 ```
 Hello andreasvoss! This is the Monkey programming language!
 Feel free to  type in commands (:q to quit)
 
->> 1+3
-%Lexer.Token{type: :int, literal: "1"}
-%Lexer.Token{type: :plus, literal: "+"}
-%Lexer.Token{type: :int, literal: "3"}
-%Lexer.Token{type: :eof, literal: ""}
+>> let hello = fn(a, b, c) { a + b + c }
+let hello = fn(a, b, c) ((a + b) + c);
 ```
 
 ## Run tests
