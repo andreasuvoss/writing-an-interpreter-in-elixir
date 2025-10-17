@@ -6,14 +6,6 @@ defmodule Parser.ReturnStatement do
       token.literal
     end
 
-    def string(%Parser.ReturnStatement{token: token, return_value: nil}) do
-      "#{token.literal} ;"
-    end
-
-    def string(%Parser.ReturnStatement{token: token, return_value: return_value}) do
-      "#{token.literal} #{return_value};"
-    end
-
     def statement_node(_) do
       nil
     end

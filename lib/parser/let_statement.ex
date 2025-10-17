@@ -7,14 +7,6 @@ defmodule Parser.LetStatement do
       token.literal
     end
 
-    def string(%Parser.LetStatement{token: token, name: name, value: nil}) do
-      "#{token.literal} #{name.token.literal} = ;"
-    end
-
-    def string(%Parser.LetStatement{token: token, name: name, value: value}) do
-      "#{token.literal} #{name.token.literal} = #{value};"
-    end
-
     def statement_node(_) do
       nil
     end

@@ -8,10 +8,6 @@ defmodule Parser.PrefixExpression do
       expression.token.literal
     end
 
-    def string(expression) do
-      "(#{expression.operator}#{string(expression.right)})"
-    end
-
     def expression_node(_) do
     end
   end

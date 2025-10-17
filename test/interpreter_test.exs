@@ -1,4 +1,5 @@
 defmodule InterpreterTest do
+  alias Parser.Identifier
   alias Lexer.Token
   alias Lexer.Lexer
   use ExUnit.Case
@@ -233,7 +234,7 @@ defmodule InterpreterTest do
     # IO.puts(test_func)
 
     # IO.inspect(tokens)
-    # IO.inspect(program)
+    IO.inspect(program)
 
     assert length(program.statements) == 1
 
@@ -368,7 +369,7 @@ defmodule InterpreterTest do
       %{input: "(5 + 5) * 2", expected: "((5 + 5) * 2)"},
       %{input: "2 / (5 + 5)", expected: "(2 / (5 + 5))"},
       %{input: "-(5 + 5)", expected: "(-(5 + 5))"},
-      %{input: "!(true == true)", expected: "(!(true == true))"},
+      %{input: "!(true == true)", expected: "(!(true == true))"}
     ]
 
     tests
@@ -392,7 +393,9 @@ defmodule InterpreterTest do
 
     statement = program.statements |> Enum.at(0)
     assert %Parser.ExpressionStatement{} = statement
-    assert %Parser.Boolean{token: %Token{type: :true, literal: "true"}, value: true} = statement.expression
+
+    assert %Parser.Boolean{token: %Token{type: true, literal: "true"}, value: true} =
+             statement.expression
   end
 
   @tag disabled: true
@@ -407,7 +410,9 @@ defmodule InterpreterTest do
 
     statement = program.statements |> Enum.at(0)
     assert %Parser.ExpressionStatement{} = statement
-    assert %Parser.Boolean{token: %Token{type: :false, literal: "false"}, value: false} = statement.expression
+
+    assert %Parser.Boolean{token: %Token{type: false, literal: "false"}, value: false} =
+             statement.expression
   end
 
   @tag disabled: true
@@ -422,6 +427,52 @@ defmodule InterpreterTest do
 
     statement = program.statements |> Enum.at(0)
     assert %Parser.LetStatement{} = statement
-    assert %Parser.Boolean{token: %Token{type: :true, literal: "true"}, value: true} = statement.value
+
+    assert %Parser.Boolean{token: %Token{type: true, literal: "true"}, value: true} =
+             statement.value
+  end
+
+  @tag disabled: true
+  test "if expression" do
+    input = "if (x < y) { x }"
+
+    tokens = Lexer.tokenize(input)
+
+    program = Parser.Parser.parse_program(tokens)
+
+    assert length(program.statements) == 1
+
+    statement = program.statements |> Enum.at(0)
+    assert %Parser.ExpressionStatement{} = statement
+
+    assert %Parser.IfExpression{
+             consequence: %Parser.BlockStatement{
+               statements: [%Parser.ExpressionStatement{expression: %Identifier{value: "x"}}]
+             },
+             alternative: nil
+           } = statement.expression
+  end
+
+  @tag disabled: true
+  test "if else expression" do
+    input = "if (x < y) { x } else { y }"
+
+    tokens = Lexer.tokenize(input)
+
+    program = Parser.Parser.parse_program(tokens)
+
+    assert length(program.statements) == 1
+
+    statement = program.statements |> Enum.at(0)
+    assert %Parser.ExpressionStatement{} = statement
+
+    assert %Parser.IfExpression{
+             consequence: %Parser.BlockStatement{
+               statements: [%Parser.ExpressionStatement{expression: %Identifier{value: "x"}}]
+             },
+             alternative: %Parser.BlockStatement{
+               statements: [%Parser.ExpressionStatement{expression: %Identifier{value: "y"}}]
+             }
+           } = statement.expression
   end
 end

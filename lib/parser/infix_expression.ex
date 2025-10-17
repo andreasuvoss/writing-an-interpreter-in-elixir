@@ -8,10 +8,6 @@ defmodule Parser.InfixExpression do
       expression.token.literal
     end
 
-    def string(expression) do
-      "(#{string(expression.left)} #{expression.operator} #{string(expression.right)})"
-    end
-
     def expression_node(_) do
     end
   end

@@ -6,14 +6,6 @@ defmodule Parser.ExpressionStatement do
       token.literal
     end
 
-    def string(%Parser.ExpressionStatement{expression: nil}) do
-      ""
-    end
-
-    def string(%Parser.ExpressionStatement{expression: exp}) do
-      exp
-    end
-
     def statement_node(_) do
       nil
     end

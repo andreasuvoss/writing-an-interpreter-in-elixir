@@ -7,10 +7,6 @@ defmodule Parser.Boolean do
       expression.token.literal
     end
 
-    def string(expression) do
-      expression.value
-    end
-
     def expression_node(_) do
     end
   end
