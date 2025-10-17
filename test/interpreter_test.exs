@@ -121,7 +121,7 @@ defmodule InterpreterTest do
 
     tokens = Lexer.tokenize(input)
 
-    program = Parser.Parser.parse_program(tokens)
+    {:ok, program} = Parser.Parser.parse_program(tokens)
 
     tests = [
       "x",
@@ -148,7 +148,7 @@ defmodule InterpreterTest do
 
     tokens = Lexer.tokenize(input)
 
-    program = Parser.Parser.parse_program(tokens)
+    {:ok, program} = Parser.Parser.parse_program(tokens)
 
     tests = [
       "5",
@@ -192,7 +192,7 @@ defmodule InterpreterTest do
 
     tokens = Lexer.tokenize(input)
 
-    program = Parser.Parser.parse_program(tokens)
+    {:ok, program} = Parser.Parser.parse_program(tokens)
 
     assert length(program.statements) == 1
 
@@ -209,7 +209,7 @@ defmodule InterpreterTest do
 
     tokens = Lexer.tokenize(input)
 
-    program = Parser.Parser.parse_program(tokens)
+    {:ok, program} = Parser.Parser.parse_program(tokens)
 
     assert length(program.statements) == 1
 
@@ -226,7 +226,7 @@ defmodule InterpreterTest do
 
     tokens = Lexer.tokenize(input)
 
-    program = Parser.Parser.parse_program(tokens)
+    {:ok, program} = Parser.Parser.parse_program(tokens)
 
     assert length(program.statements) == 1
 
@@ -247,7 +247,7 @@ defmodule InterpreterTest do
 
     tokens = Lexer.tokenize(input)
 
-    program = Parser.Parser.parse_program(tokens)
+    {:ok, program} = Parser.Parser.parse_program(tokens)
 
     assert length(program.statements) == 1
 
@@ -267,7 +267,7 @@ defmodule InterpreterTest do
 
     tokens = Lexer.tokenize(input)
 
-    program = Parser.Parser.parse_program(tokens)
+    {:ok, program} = Parser.Parser.parse_program(tokens)
 
     assert length(program.statements) == 1
 
@@ -293,6 +293,7 @@ defmodule InterpreterTest do
       %{input: "a * b / c", expected: "((a * b) / c)"},
       %{input: "a + b / c", expected: "(a + (b / c))"},
       %{input: "a + b * c + d / e - f", expected: "(((a + (b * c)) + (d / e)) - f)"},
+      %{input: "1*2;-5 * 5", expected: "((-5) * 5)"},
       %{input: "3 + 4; -5 * 5", expected: "(3 + 4)((-5) * 5)"},
       %{input: "5 > 4 == 3 < 4", expected: "((5 > 4) == (3 < 4))"},
       %{input: "5 > 4 != 3 < 4", expected: "((5 > 4) != (3 < 4))"},
@@ -311,7 +312,7 @@ defmodule InterpreterTest do
     tests
     |> Enum.each(fn test ->
       tokens = Lexer.tokenize(test.input)
-      program = Parser.Parser.parse_program(tokens)
+      {:ok, program} = Parser.Parser.parse_program(tokens)
 
       assert "#{program}" == test.expected
     end)
@@ -323,7 +324,7 @@ defmodule InterpreterTest do
 
     tokens = Lexer.tokenize(input)
 
-    program = Parser.Parser.parse_program(tokens)
+    {:ok, program} = Parser.Parser.parse_program(tokens)
 
     assert length(program.statements) == 1
 
@@ -340,7 +341,7 @@ defmodule InterpreterTest do
 
     tokens = Lexer.tokenize(input)
 
-    program = Parser.Parser.parse_program(tokens)
+    {:ok, program} = Parser.Parser.parse_program(tokens)
 
     assert length(program.statements) == 1
 
@@ -357,7 +358,7 @@ defmodule InterpreterTest do
 
     tokens = Lexer.tokenize(input)
 
-    program = Parser.Parser.parse_program(tokens)
+    {:ok, program} = Parser.Parser.parse_program(tokens)
 
     assert length(program.statements) == 1
 
@@ -374,7 +375,7 @@ defmodule InterpreterTest do
 
     tokens = Lexer.tokenize(input)
 
-    program = Parser.Parser.parse_program(tokens)
+    {:ok, program} = Parser.Parser.parse_program(tokens)
 
     assert length(program.statements) == 1
 
@@ -395,7 +396,7 @@ defmodule InterpreterTest do
 
     tokens = Lexer.tokenize(input)
 
-    program = Parser.Parser.parse_program(tokens)
+    {:ok, program} = Parser.Parser.parse_program(tokens)
 
     assert length(program.statements) == 1
 
@@ -418,7 +419,7 @@ defmodule InterpreterTest do
 
     tokens = Lexer.tokenize(input)
 
-    program = Parser.Parser.parse_program(tokens)
+    {:ok, program} = Parser.Parser.parse_program(tokens)
 
     assert length(program.statements) == 1
 
@@ -450,7 +451,7 @@ defmodule InterpreterTest do
 
     tokens = Lexer.tokenize(input)
 
-    program = Parser.Parser.parse_program(tokens)
+    {:ok, program} = Parser.Parser.parse_program(tokens)
 
     assert length(program.statements) == 1
 
@@ -478,7 +479,7 @@ defmodule InterpreterTest do
 
     tokens = Lexer.tokenize(input)
 
-    program = Parser.Parser.parse_program(tokens)
+    {:ok, program} = Parser.Parser.parse_program(tokens)
 
     assert length(program.statements) == 1
 
@@ -510,7 +511,7 @@ defmodule InterpreterTest do
 
     tokens = Lexer.tokenize(input)
 
-    program = Parser.Parser.parse_program(tokens)
+    {:ok, program} = Parser.Parser.parse_program(tokens)
 
     assert length(program.statements) == 1
 
@@ -535,7 +536,7 @@ defmodule InterpreterTest do
 
     tokens = Lexer.tokenize(input)
 
-    program = Parser.Parser.parse_program(tokens)
+    {:ok, program} = Parser.Parser.parse_program(tokens)
 
     assert length(program.statements) == 1
 
@@ -574,7 +575,7 @@ defmodule InterpreterTest do
     tests
     |> Enum.each(fn test ->
       tokens = Lexer.tokenize(test.input)
-      program = Parser.Parser.parse_program(tokens)
+      {:ok, program} = Parser.Parser.parse_program(tokens)
 
       assert "#{program}" == test.expected
     end)
@@ -594,11 +595,34 @@ defmodule InterpreterTest do
     tests
     |> Enum.each(fn test ->
       tokens = Lexer.tokenize(test.input)
-      program = Parser.Parser.parse_program(tokens)
+      {:ok, program} = Parser.Parser.parse_program(tokens)
 
       statement = program.statements |> Enum.at(0)
 
       assert statement = test.expected
     end)
+  end
+
+  @tag disabled: true
+  test "errors" do
+    input = "let x; let y = 4; let p; let q; return q; return; if(x == y) { return ; let l; q = 3; } p; x = 1; fn( a {} add({})}"
+    # input = "x = 1"
+    # tests = [
+    #   %{input: "let x", expected: %Parser.LetStatement{name: %Identifier{value: "x"}, value: %IntegerLiteral{value: 5}}},
+    # ]
+
+    tokens = Lexer.tokenize(input)
+
+    {:ok, program} = Parser.Parser.parse_program(tokens)
+
+    # tests
+    # |> Enum.each(fn test ->
+    #   tokens = Lexer.tokenize(test.input)
+    #   {:ok, program} = Parser.Parser.parse_program(tokens)
+    #
+    #   statement = program.statements |> Enum.at(0)
+    #
+    #   assert statement = test.expected
+    # end)
   end
 end
