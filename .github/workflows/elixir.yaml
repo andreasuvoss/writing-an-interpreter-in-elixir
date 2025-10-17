@@ -1,0 +1,33 @@
+name: Elixir Test
+
+on:
+  push:
+    branches: [ "main" ]  # adapt branch for project
+  pull_request:
+    branches: [ "main" ]  # adapt branch for project
+
+# Sets the ENV `MIX_ENV` to `test` for running tests
+env:
+  MIX_ENV: test
+
+permissions:
+  contents: read
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    name: Testing interpreter (OTP ${{matrix.otp}} / Elixir ${{matrix.elixir}})
+    strategy:
+      matrix:
+        otp: ['27.3.4']       # Define the OTP version [required]
+        elixir: ['1.18.4']    # Define the elixir version [required]
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+    - name: Set up Elixir
+      uses: erlef/setup-beam@v1
+      with:
+        otp-version: ${{matrix.otp}}
+        elixir-version: ${{matrix.elixir}}
+    - run: mix deps.get
+    - run: mix test --no-start
