@@ -10,8 +10,7 @@ repository's root directory
 ```sh
 mix run
 ```
-In its current form it runs the lexer + parser and prints out the program as a string. There is no (or very poor) error
-handling, so if the syntax is not correct the REPL will crash.
+In its current form it runs the lexer + parser and prints out the program as a string. 
 
 ```
 Hello andreasvoss! This is the Monkey programming language!
@@ -20,6 +19,28 @@ Feel free to  type in commands (:q to quit)
 >> let hello = fn(a, b, c) { a + b + c }
 let hello = fn(a, b, c) ((a + b) + c);
 ```
+
+I have added some error handling such that if you do make a mistake, the REPL should not crash on you, and you might get
+a helpful error. I am making no promises on either though.
+
+```
+Hello andreasvoss! This is the Monkey programming language!
+Feel free to  type in commands (:q to quit)
+
+>> let x = 1; let y 1
+     .-"-.            .-"-.            .-"-.           .-"-.
+   _/_-.-_\_        _/.-.-.\_        _/.-.-.\_       _/.-.-.\_
+  / __} {__ \      /|( o o )|\      ( ( o o ) )     ( ( o o ) )
+ / //  "  \\ \    | //  "  \\ |      |/  "  \|       |/  "  \|
+/ / \'---'/ \ \  / / \'---'/ \ \      \'/^\'/         \ .-. /
+\ \_/`"""`\_/ /  \ \_/`"""`\_/ /      /`\ /`\         /`"""`\
+ \           /    \           /      /  /|\  \       /       \
+
+Woops! We ran into some monkey business here!
+parser errors:
+        1. expected '=' after let y
+```
+
 
 ## Run tests
 To run the tests the following command should be run. The `--no-start` flag makes sure only the tests run, if it's not

@@ -121,7 +121,7 @@ defmodule InterpreterTest do
 
     tokens = Lexer.tokenize(input)
 
-    program = Parser.Parser.parse_program(tokens)
+    {:ok, program} = Parser.Parser.parse_program(tokens)
 
     tests = [
       "x",
@@ -148,7 +148,7 @@ defmodule InterpreterTest do
 
     tokens = Lexer.tokenize(input)
 
-    program = Parser.Parser.parse_program(tokens)
+    {:ok, program} = Parser.Parser.parse_program(tokens)
 
     tests = [
       "5",
@@ -192,7 +192,7 @@ defmodule InterpreterTest do
 
     tokens = Lexer.tokenize(input)
 
-    program = Parser.Parser.parse_program(tokens)
+    {:ok, program} = Parser.Parser.parse_program(tokens)
 
     assert length(program.statements) == 1
 
@@ -209,7 +209,7 @@ defmodule InterpreterTest do
 
     tokens = Lexer.tokenize(input)
 
-    program = Parser.Parser.parse_program(tokens)
+    {:ok, program} = Parser.Parser.parse_program(tokens)
 
     assert length(program.statements) == 1
 
@@ -226,7 +226,7 @@ defmodule InterpreterTest do
 
     tokens = Lexer.tokenize(input)
 
-    program = Parser.Parser.parse_program(tokens)
+    {:ok, program} = Parser.Parser.parse_program(tokens)
 
     assert length(program.statements) == 1
 
@@ -247,7 +247,7 @@ defmodule InterpreterTest do
 
     tokens = Lexer.tokenize(input)
 
-    program = Parser.Parser.parse_program(tokens)
+    {:ok, program} = Parser.Parser.parse_program(tokens)
 
     assert length(program.statements) == 1
 
@@ -267,7 +267,7 @@ defmodule InterpreterTest do
 
     tokens = Lexer.tokenize(input)
 
-    program = Parser.Parser.parse_program(tokens)
+    {:ok, program} = Parser.Parser.parse_program(tokens)
 
     assert length(program.statements) == 1
 
@@ -311,7 +311,7 @@ defmodule InterpreterTest do
     tests
     |> Enum.each(fn test ->
       tokens = Lexer.tokenize(test.input)
-      program = Parser.Parser.parse_program(tokens)
+      {:ok, program} = Parser.Parser.parse_program(tokens)
 
       assert "#{program}" == test.expected
     end)
@@ -323,7 +323,7 @@ defmodule InterpreterTest do
 
     tokens = Lexer.tokenize(input)
 
-    program = Parser.Parser.parse_program(tokens)
+    {:ok, program} = Parser.Parser.parse_program(tokens)
 
     assert length(program.statements) == 1
 
@@ -340,7 +340,7 @@ defmodule InterpreterTest do
 
     tokens = Lexer.tokenize(input)
 
-    program = Parser.Parser.parse_program(tokens)
+    {:ok, program} = Parser.Parser.parse_program(tokens)
 
     assert length(program.statements) == 1
 
@@ -357,7 +357,7 @@ defmodule InterpreterTest do
 
     tokens = Lexer.tokenize(input)
 
-    program = Parser.Parser.parse_program(tokens)
+    {:ok, program} = Parser.Parser.parse_program(tokens)
 
     assert length(program.statements) == 1
 
@@ -374,7 +374,7 @@ defmodule InterpreterTest do
 
     tokens = Lexer.tokenize(input)
 
-    program = Parser.Parser.parse_program(tokens)
+    {:ok, program} = Parser.Parser.parse_program(tokens)
 
     assert length(program.statements) == 1
 
@@ -395,7 +395,7 @@ defmodule InterpreterTest do
 
     tokens = Lexer.tokenize(input)
 
-    program = Parser.Parser.parse_program(tokens)
+    {:ok, program} = Parser.Parser.parse_program(tokens)
 
     assert length(program.statements) == 1
 
@@ -418,7 +418,7 @@ defmodule InterpreterTest do
 
     tokens = Lexer.tokenize(input)
 
-    program = Parser.Parser.parse_program(tokens)
+    {:ok, program} = Parser.Parser.parse_program(tokens)
 
     assert length(program.statements) == 1
 
@@ -450,7 +450,7 @@ defmodule InterpreterTest do
 
     tokens = Lexer.tokenize(input)
 
-    program = Parser.Parser.parse_program(tokens)
+    {:ok, program} = Parser.Parser.parse_program(tokens)
 
     assert length(program.statements) == 1
 
@@ -478,7 +478,7 @@ defmodule InterpreterTest do
 
     tokens = Lexer.tokenize(input)
 
-    program = Parser.Parser.parse_program(tokens)
+    {:ok, program} = Parser.Parser.parse_program(tokens)
 
     assert length(program.statements) == 1
 
@@ -510,7 +510,7 @@ defmodule InterpreterTest do
 
     tokens = Lexer.tokenize(input)
 
-    program = Parser.Parser.parse_program(tokens)
+    {:ok, program} = Parser.Parser.parse_program(tokens)
 
     assert length(program.statements) == 1
 
@@ -535,7 +535,7 @@ defmodule InterpreterTest do
 
     tokens = Lexer.tokenize(input)
 
-    program = Parser.Parser.parse_program(tokens)
+    {:ok, program} = Parser.Parser.parse_program(tokens)
 
     assert length(program.statements) == 1
 
@@ -567,14 +567,17 @@ defmodule InterpreterTest do
     tests = [
       %{input: "add()", expected: "add()"},
       %{input: "a + add(b * c) + d", expected: "((a + add((b * c))) + d)"},
-      %{input: "add(a, b, 1, 2 * 3, 4 + 5, add(6, 7 * 8))", expected: "add(a, b, 1, (2 * 3), (4 + 5), add(6, (7 * 8)))"},
+      %{
+        input: "add(a, b, 1, 2 * 3, 4 + 5, add(6, 7 * 8))",
+        expected: "add(a, b, 1, (2 * 3), (4 + 5), add(6, (7 * 8)))"
+      },
       %{input: "add(a + b + c * d / f + g)", expected: "add((((a + b) + ((c * d) / f)) + g))"}
     ]
 
     tests
     |> Enum.each(fn test ->
       tokens = Lexer.tokenize(test.input)
-      program = Parser.Parser.parse_program(tokens)
+      {:ok, program} = Parser.Parser.parse_program(tokens)
 
       assert "#{program}" == test.expected
     end)
@@ -583,22 +586,48 @@ defmodule InterpreterTest do
   @tag disabled: true
   test "let and return statements" do
     tests = [
-      %{input: "let x = 5;", expected: %Parser.LetStatement{name: %Identifier{value: "x"}, value: %IntegerLiteral{value: 5}}},
-      %{input: "let y = true;", expected: %Parser.LetStatement{name: %Identifier{value: "y"}, value: %Boolean{value: true}}},
-      %{input: "let foobar = y;", expected: %Parser.LetStatement{name: %Identifier{value: "foobar"}, value: %Identifier{value: "y"}}},
-      %{input: "return 5;", expected: %Parser.ReturnStatement{return_value: %IntegerLiteral{value: 5}}},
-      %{input: "return true;", expected: %Parser.ReturnStatement{return_value: %Boolean{value: true}}},
-      %{input: "return foobar;", expected: %Parser.ReturnStatement{return_value: %Identifier{value: "foobar"}}},
+      %{
+        input: "let x = 5;",
+        expected: %Parser.LetStatement{
+          name: %Identifier{value: "x"},
+          value: %IntegerLiteral{value: 5}
+        }
+      },
+      %{
+        input: "let y = true;",
+        expected: %Parser.LetStatement{
+          name: %Identifier{value: "y"},
+          value: %Boolean{value: true}
+        }
+      },
+      %{
+        input: "let foobar = y;",
+        expected: %Parser.LetStatement{
+          name: %Identifier{value: "foobar"},
+          value: %Identifier{value: "y"}
+        }
+      },
+      %{
+        input: "return 5;",
+        expected: %Parser.ReturnStatement{return_value: %IntegerLiteral{value: 5}}
+      },
+      %{
+        input: "return true;",
+        expected: %Parser.ReturnStatement{return_value: %Boolean{value: true}}
+      },
+      %{
+        input: "return foobar;",
+        expected: %Parser.ReturnStatement{return_value: %Identifier{value: "foobar"}}
+      }
     ]
 
     tests
     |> Enum.each(fn test ->
       tokens = Lexer.tokenize(test.input)
-      program = Parser.Parser.parse_program(tokens)
+      {:ok, program} = Parser.Parser.parse_program(tokens)
 
-      statement = program.statements |> Enum.at(0)
-
-      assert statement = test.expected
+      _statement = program.statements |> Enum.at(0)
+      assert _statement = test.expected
     end)
   end
 end
