@@ -8,7 +8,7 @@ defmodule Main do
     user = String.trim(user)
 
     IO.write("Hello #{user}! This is the Monkey programming language!\n")
-    IO.write("Feel free to  type in commands (:q to quit)\n\n")
+    IO.write("Feel free to type in commands (:q to quit)\n\n")
     Repl.start()
     {:ok, self()}
   end

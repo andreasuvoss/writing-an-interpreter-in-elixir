@@ -630,4 +630,14 @@ defmodule InterpreterTest do
       assert _statement = test.expected
     end)
   end
+
+  test "parse program..." do
+    input = "let add = fn(){ if(1 == 1) { x } else { y; let q = 1; } }"
+    input = "let fibonacci = fn(x) { if (x == 0) { 0 } else { if (x == 1) { return 1; } else { fibonacci(x - 1) +fibonacci(x - 2); } } };"
+
+    tokens = Lexer.tokenize(input)
+
+    {:ok, program} = Parser.Parser.parse_program(tokens)
+
+  end
 end

@@ -96,6 +96,7 @@ defmodule Parser.Parser do
            },
            value: value
          }, rest}
+      {:error, errors, tail} -> {:error, errors, tail} 
     end
   end
 
@@ -150,21 +151,28 @@ defmodule Parser.Parser do
     end
   end
 
-  def parse_block_statement([token | tail], block_tokens \\ []) do
-    case token.type do
-      :lbrace ->
-        parse_block_statement(tail)
-      :eof ->
-        {:error, ["block statement never terminated with '}'"], tail}
-      :rbrace ->
-        case parse_statements(Enum.reverse(block_tokens), [], []) do
-          {:ok, statements, _} -> {:ok, %BlockStatement{statements: Enum.reverse(statements)}, tail}
-          {:error, errors, _} -> {:error, errors, tail}
-        end
-      _ ->
-        parse_block_statement(tail, [token | block_tokens])
+  def parse_block_statement(tokens) do
+
+    case identify_block_tokens(tokens) do
+      {:ok, block_tokens, tail} -> case parse_statements(block_tokens, [], []) do
+        {:ok, statements, _} -> {:ok, %BlockStatement{statements: Enum.reverse(statements)}, tail}
+        {:error, errors, tail} -> {:error, errors, tail}
+      end
+      {:error, errors, tail} -> {:error, errors, tail}
     end
   end
+
+  defp identify_block_tokens([token | tail], acc \\ [], depth \\ 0) do
+    case {token.type, depth} do
+      {:lbrace, 0} -> identify_block_tokens(tail, acc, depth + 1)
+      {:lbrace, _} -> identify_block_tokens(tail, [token | acc], depth + 1)
+      {:rbrace, 1} -> {:ok, Enum.reverse(acc), tail}
+      {:rbrace, _} -> identify_block_tokens(tail, [token | acc], depth - 1)
+      {:eof, _} -> {:error, ["expected block to be closed before reaching EOF"], []}
+      _ -> identify_block_tokens(tail, [token | acc], depth)
+    end
+  end
+
 
   def parse_if_expression([token, peek_token | rest]) do
     if peek_token.type != :lparen do
@@ -180,20 +188,21 @@ defmodule Parser.Parser do
               end
             {:ok, consequence, tail} -> {:ok, %IfExpression{ token: token, condition: condition, consequence: consequence }, tail}
             {:error, errors, tail} -> 
-              IO.inspect(tail)
               {:error, errors, tail}
           end
         {:error, errors, tail} -> {:error, errors, tail}
+        {:ok, condition, [_ | tail]} -> {:error, ["missing block for condition #{condition}"], tail}
       end
     end
   end
 
-  def parse_function_literal([_, peek_token | rest]) do
-    if peek_token.type != :lparen do
-      {:error, ["expected '(' to start function literal got '#{peek_token.literal}'"], rest}
+  def parse_function_literal([token | rest]) do
+    if token.type != :lparen do
+      {:error, ["expected '(' to start function literal got '#{token.literal}'"], rest}
     else
       case parse_function_parameters(rest) do
-       {:ok, params, rest} -> case parse_block_statement(rest) do
+       {:ok, params, rest} -> 
+          case parse_block_statement(rest) do
           {:ok, statements, rest} -> {:ok, %FunctionLiteral{parameters: params, body: statements}, rest}
           {:error, errors, rest} -> {:error, errors, rest}
        end
@@ -254,7 +263,7 @@ defmodule Parser.Parser do
   defp parse_prefix([%Token{type: true} | _] = tokens), do: parse_boolean(tokens)
   defp parse_prefix([%Token{type: false} | _] = tokens), do: parse_boolean(tokens)
   defp parse_prefix([%Token{type: :if} | _] = tokens), do: parse_if_expression(tokens)
-  defp parse_prefix([%Token{type: :function} | _] = tokens), do: parse_function_literal(tokens)
+  defp parse_prefix([%Token{type: :function} | tail]), do: parse_function_literal(tail)
   defp parse_prefix([%Token{type: :assign} | tail]), do: {:error, ["assignment '=' without let statement is not allowed"], tail}
   defp parse_prefix([%Token{literal: literal} | tail]), do: {:error, ["cannot handle symbol '#{literal}' in the current context"], tail}
 

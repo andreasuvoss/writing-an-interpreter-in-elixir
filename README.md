@@ -14,7 +14,7 @@ In its current form it runs the lexer + parser and prints out the program as a s
 
 ```
 Hello andreasvoss! This is the Monkey programming language!
-Feel free to  type in commands (:q to quit)
+Feel free to type in commands (:q to quit)
 
 >> let hello = fn(a, b, c) { a + b + c }
 let hello = fn(a, b, c) ((a + b) + c);
@@ -25,7 +25,7 @@ a helpful error. I am making no promises on either though.
 
 ```
 Hello andreasvoss! This is the Monkey programming language!
-Feel free to  type in commands (:q to quit)
+Feel free to type in commands (:q to quit)
 
 >> let x = 1; let y 1
      .-"-.            .-"-.            .-"-.           .-"-.
