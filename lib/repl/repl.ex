@@ -9,7 +9,10 @@ defmodule Repl.Repl do
         tokens = Lexer.Lexer.tokenize(String.trim(input))
         case Parser.Parser.parse_program(tokens) do
           {:ok, program} -> 
-            IO.puts(program)
+            case Evaluator.Evaluator.eval(program) do
+              {:ok, evaluated} -> Evaluator.Object.inspect(evaluated)
+            end
+            # IO.puts(program)
             # IO.inspect(program)
           {:error, errors} -> 
             IO.puts(monkey_faces())
