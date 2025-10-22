@@ -13,7 +13,7 @@ defmodule Parser.ReturnStatement do
 
   defimpl String.Chars, for: Parser.ReturnStatement do
     def to_string(%Parser.ReturnStatement{token: token, return_value: nil}) do
-      "#{token.literal} ;"
+      "#{token.literal};"
     end
 
     def to_string(%Parser.ReturnStatement{token: token, return_value: return_value}) do

@@ -1,4 +1,4 @@
-defmodule InterpreterTest do
+defmodule ParserTest do
   alias Parser.Boolean
   alias Parser.IntegerLiteral
   alias Parser.InfixExpression
@@ -6,110 +6,6 @@ defmodule InterpreterTest do
   alias Lexer.Token
   alias Lexer.Lexer
   use ExUnit.Case
-  doctest Interpreter
-
-  @tag disabled: true
-  test "lexer should tokenize input" do
-    input = """
-    let five = 5;
-    let ten = 10;
-    let add = fn(x, y) {
-      x + y;
-    }
-
-    let result = add(five, ten);
-
-    !-/*5;
-    5 < 10 > 5;
-
-    if (5 < 10) {
-      return true;
-    } else {
-      return false;
-    }
-
-    10 == 10;
-    10 != 9;
-    """
-
-    tests = [
-      %Token{type: :let, literal: "let"},
-      %Token{type: :ident, literal: "five"},
-      %Token{type: :assign, literal: "="},
-      %Token{type: :int, literal: "5"},
-      %Token{type: :semicolon, literal: ";"},
-      %Token{type: :let, literal: "let"},
-      %Token{type: :ident, literal: "ten"},
-      %Token{type: :assign, literal: "="},
-      %Token{type: :int, literal: "10"},
-      %Token{type: :semicolon, literal: ";"},
-      %Token{type: :let, literal: "let"},
-      %Token{type: :ident, literal: "add"},
-      %Token{type: :assign, literal: "="},
-      %Token{type: :function, literal: "fn"},
-      %Token{type: :lparen, literal: "("},
-      %Token{type: :ident, literal: "x"},
-      %Token{type: :comma, literal: ","},
-      %Token{type: :ident, literal: "y"},
-      %Token{type: :rparen, literal: ")"},
-      %Token{type: :lbrace, literal: "{"},
-      %Token{type: :ident, literal: "x"},
-      %Token{type: :plus, literal: "+"},
-      %Token{type: :ident, literal: "y"},
-      %Token{type: :semicolon, literal: ";"},
-      %Token{type: :rbrace, literal: "}"},
-      %Token{type: :let, literal: "let"},
-      %Token{type: :ident, literal: "result"},
-      %Token{type: :assign, literal: "="},
-      %Token{type: :ident, literal: "add"},
-      %Token{type: :lparen, literal: "("},
-      %Token{type: :ident, literal: "five"},
-      %Token{type: :comma, literal: ","},
-      %Token{type: :ident, literal: "ten"},
-      %Token{type: :rparen, literal: ")"},
-      %Token{type: :semicolon, literal: ";"},
-      %Token{type: :bang, literal: "!"},
-      %Token{type: :minus, literal: "-"},
-      %Token{type: :slash, literal: "/"},
-      %Token{type: :asterix, literal: "*"},
-      %Token{type: :int, literal: "5"},
-      %Token{type: :semicolon, literal: ";"},
-      %Token{type: :int, literal: "5"},
-      %Token{type: :lt, literal: "<"},
-      %Token{type: :int, literal: "10"},
-      %Token{type: :gt, literal: ">"},
-      %Token{type: :int, literal: "5"},
-      %Token{type: :semicolon, literal: ";"},
-      %Token{type: :if, literal: "if"},
-      %Token{type: :lparen, literal: "("},
-      %Token{type: :int, literal: "5"},
-      %Token{type: :lt, literal: "<"},
-      %Token{type: :int, literal: "10"},
-      %Token{type: :rparen, literal: ")"},
-      %Token{type: :lbrace, literal: "{"},
-      %Token{type: :return, literal: "return"},
-      %Token{type: true, literal: "true"},
-      %Token{type: :semicolon, literal: ";"},
-      %Token{type: :rbrace, literal: "}"},
-      %Token{type: :else, literal: "else"},
-      %Token{type: :lbrace, literal: "{"},
-      %Token{type: :return, literal: "return"},
-      %Token{type: false, literal: "false"},
-      %Token{type: :semicolon, literal: ";"},
-      %Token{type: :rbrace, literal: "}"},
-      %Token{type: :int, literal: "10"},
-      %Token{type: :eq, literal: "=="},
-      %Token{type: :int, literal: "10"},
-      %Token{type: :semicolon, literal: ";"},
-      %Token{type: :int, literal: "10"},
-      %Token{type: :not_eq, literal: "!="},
-      %Token{type: :int, literal: "9"},
-      %Token{type: :semicolon, literal: ";"},
-      %Token{type: :eof, literal: ""}
-    ]
-
-    assert Lexer.tokenize(input) == tests
-  end
 
   @tag disabled: true
   test "let statements" do
@@ -631,13 +527,37 @@ defmodule InterpreterTest do
     end)
   end
 
-  test "parse program..." do
-    input = "let add = fn(){ if(1 == 1) { x } else { y; let q = 1; } }"
-    input = "let fibonacci = fn(x) { if (x == 0) { 0 } else { if (x == 1) { return 1; } else { fibonacci(x - 1) +fibonacci(x - 2); } } };"
-
-    tokens = Lexer.tokenize(input)
-
-    {:ok, program} = Parser.Parser.parse_program(tokens)
-
+  test "does it parse" do
+    inputs = [
+      "let add = fn(){ if(1 == 1) { x } else { y; let q = 1; } }",
+      "let fibonacci = fn(x) { if (x == 0) { 0 } else { if (x == 1) { return 1; } else { fibonacci(x - 1) +fibonacci(x - 2); } } };",
+      "if(true){}",
+      "if(true){ let y = 7 } else { let x = 1 }",
+      "if(true){ let a = fn(x,y,z){if(x>y>z){ print(x); return x; } else {print(y); print(z) return z;}}}"
+    ]
+    
+    inputs |> Enum.each(fn input -> 
+      tokens = Lexer.tokenize(input)
+      {result, _} = Parser.Parser.parse_program(tokens)
+      assert result == :ok
+    end)
   end
+
+  test "fail parsing" do
+    tests = [
+      %{input: "let add = fn(){ if(1 == 1) { x  else { y; let q = 1; } }", errors: 4},
+      %{input: "let fibonacci = fn(x) { else { if (x == 1) { return 1; } else { fibonacci(x - 1) +fibonacci(x - 2); }}};", errors: 1},
+      %{input: "else", errors: 4},
+      %{input: "if(true){ u = 7 } else { let x = 1 }", errors: 5},
+      %{input: "if(true){ let a = fn(x,y.z){if(x>y>z){ print(x); return x; } else {print(y); print(z) return z;}}}",
+    errors:  5}
+    ]
+    
+    tests |> Enum.each(fn test -> 
+      tokens = Lexer.tokenize(test.input)
+      {result, _} = Parser.Parser.parse_program(tokens)
+      assert result == :error
+    end)
+  end
+  
 end

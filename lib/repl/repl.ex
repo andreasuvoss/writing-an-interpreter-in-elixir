@@ -8,7 +8,8 @@ defmodule Repl.Repl do
       _ ->
         tokens = Lexer.Lexer.tokenize(String.trim(input))
         case Parser.Parser.parse_program(tokens) do
-          {:ok, program} -> IO.puts(program)
+          {:ok, program} -> 
+            IO.puts(program)
             # IO.inspect(program)
           {:error, errors} -> 
             IO.puts(monkey_faces())
