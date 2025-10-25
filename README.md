@@ -4,24 +4,30 @@ This is my attempt at going through the book 'Writing An Interpreter In Go' by T
 it in Go, I am attempting to do it in Elixir while following the strategies from the book.
 
 ## Start the interactive interpreter
-At this point in time the REPL doesn't do much, but you can start it by running the following command from the
-repository's root directory
+You can run the REPL by running the following command from the repository's root directory
 
 ```sh
 mix run
 ```
-In its current form it runs the lexer + parser and prints out the program as a string. 
+In its current form it runs the lexer, parser and evaluator which means you should be able to parse any Monkey program,
+that uses the features implemented in this interpreter.
 
 ```
 Hello andreasvoss! This is the Monkey programming language!
 Feel free to type in commands (:q to quit)
 
 >> let hello = fn(a, b, c) { a + b + c }
-let hello = fn(a, b, c) ((a + b) + c);
+fn(a, b, c){
+ ((a + b) + c)
+}
+>> hello(1, 2, 3)
+6
 ```
 
 I have added some error handling such that if you do make a mistake, the REPL should not crash on you, and you might get
 a helpful error. I am making no promises on either though.
+
+In case of a parser error you will get an error looking like this
 
 ```
 Hello andreasvoss! This is the Monkey programming language!
@@ -41,6 +47,25 @@ parser errors:
         1. expected '=' after let y
 ```
 
+Whereas you will get another type of error if it occurs during evaluation
+
+```
+Hello andreasvoss! This is the Monkey programming language!
+Feel free to type in commands (:q to quit)
+
+>> 8 + true
+type mismatch: INTEGER + BOOLEAN
+```
+
+## Implemented features
+
+* Integers (`8`)
+* Booleans (`true`)
+* If-expressions (`if(true) {} else {}`)
+* Functions (`fn(x){ x + 1 }`)
+* Variable assignment (`let x = 1`)
+* Optional semicolons
+* Recursive functions (this has a memory issue)
 
 ## Run tests
 To run the tests the following command should be run. The `--no-start` flag makes sure only the tests run, if it's not

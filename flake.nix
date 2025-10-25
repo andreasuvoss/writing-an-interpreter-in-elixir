@@ -1,5 +1,5 @@
 {
-  description = "Flake for this project?";
+  description = "Flake for the developing the Monkey interpreter using Elixir";
 
   inputs = {
     nixpkgs.url = "github:nixos/nixpkgs?ref=nixos-unstable";
@@ -21,8 +21,6 @@
         devShell = pkgs.mkShell {
           buildInputs = [
             pkgs.elixir
-            pkgs.watchman
-            pkgs.inotify-tools
           ];
         };
       }

@@ -2,6 +2,7 @@ defmodule Evaluator.Evaluator do
   # alias Parser.ReturnStatement
   # alias Evaluator.Boolean
   # alias Parser.Boolean
+  alias Evaluator.Null
   alias Evaluator.Function
   alias Evaluator.Environment
   alias Parser.ExpressionStatement
@@ -106,27 +107,32 @@ defmodule Evaluator.Evaluator do
   end
 
   defp apply_function(%Function{} = function, args, %Environment{} = environment) do
-    extended_env = extend_function_env(function, args)
-    case eval(function.body, extended_env) do
-      {:ok, %Evaluator.Return{} = ret, _} -> {:ok, ret.value, environment}
-      {:ok, val, _} -> {:ok, val, environment}
+    # extended_env = extend_function_env(function, args)
+    case extend_function_env(function, args) do
+      {:ok, extended_env} -> 
+        case eval(function.body, extended_env) do
+          {:ok, %Evaluator.Return{} = ret, _} -> {:ok, ret.value, environment}
+          {:ok, val, _} -> {:ok, val, environment}
+        end
+      {:error, error} -> {:error, error}
     end
+
+    
   end
 
   def extend_function_env(%Function{} = function, args) do
-    internal_store = 
-      function.parameters 
-      |> Enum.with_index(0) 
-      |> Enum.map(fn {param, index} -> {param.value, Enum.at(args, index)} end) 
-      |> Map.new()
-      |> maybe_add_self(function)
+    if length(function.parameters) != length(args) do
+      {:error, create_error("wrong number of arguments passed to the function #{function.name}")}
+    else
+      internal_store = 
+        function.parameters 
+        |> Enum.with_index(0) 
+        |> Enum.map(fn {param, index} -> {param.value, Enum.at(args, index)} end) 
+        |> Map.new()
+        |> maybe_add_self(function)
+      {:ok, %Environment{store: internal_store, outer: function.env}}
+    end
 
-    # IO.inspect(function)
-    #
-    # IO.puts("internal_store")
-    # IO.inspect(internal_store)
-
-    %Environment{store: internal_store, outer: function.env}
   end
 
   # Helpers for allowing recursion by adding the function itself to its own environment
@@ -261,6 +267,12 @@ defmodule Evaluator.Evaluator do
       {:ok, _, env} -> eval_block_statements(tail, env)
     end
   end
+
+  
+  def eval_block_statements([], %Environment{} = environment) do
+    {:ok, %Null{}, environment}
+  end
+
 
   # let q = fn(x){ let z = fn(x){ if(x > 10) { true;} else {z(x+1)}} z(x)}
 
