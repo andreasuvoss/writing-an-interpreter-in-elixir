@@ -65,7 +65,8 @@ type mismatch: INTEGER + BOOLEAN
 * Functions (`fn(x){ x + 1 }`)
 * Variable assignment (`let x = 1`)
 * Optional semicolons
-* Recursive functions (this has a memory issue)
+* Recursive functions
+* Closures
 
 ## Run tests
 To run the tests the following command should be run. The `--no-start` flag makes sure only the tests run, if it's not

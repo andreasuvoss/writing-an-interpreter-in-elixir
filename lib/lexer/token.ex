@@ -6,26 +6,26 @@ defmodule Lexer.Token do
 
   defstruct type: "", literal: ""
 
-  @types %{
-    illegal: "ILLEGAL",
-    eof: "EOF",
-    ident: "IDENT",
-    int: "INT",
-    assign: "=",
-    plus: "+",
-    comma: ",",
-    semicolon: ";",
-    lparen: "(",
-    rparen: ")",
-    lbrace: "{",
-    rbrace: "}",
-    function: "FUNCTION",
-    let: "LET",
-  }
-
-  def get_token(token) do
-    @types[token]
-  end
+  # @types %{
+  #   illegal: "ILLEGAL",
+  #   eof: "EOF",
+  #   ident: "IDENT",
+  #   int: "INT",
+  #   assign: "=",
+  #   plus: "+",
+  #   comma: ",",
+  #   semicolon: ";",
+  #   lparen: "(",
+  #   rparen: ")",
+  #   lbrace: "{",
+  #   rbrace: "}",
+  #   function: "FUNCTION",
+  #   let: "LET",
+  # }
+  #
+  # def get_token(token) do
+  #   @types[token]
+  # end
 
   def lookup_identifier(identifier) do
     case identifier do

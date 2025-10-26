@@ -24,11 +24,11 @@ defmodule Parser.Parser do
   ]
 
   for {key, value} <- precedence_constants do
-    def encode(unquote(key)), do: unquote(value)
-    def decode(unquote(value)), do: unquote(key)
+    defp encode(unquote(key)), do: unquote(value)
+    defp decode(unquote(value)), do: unquote(key)
   end
 
-  def precedence_of(%Token{type: type}) do
+  defp precedence_of(%Token{type: type}) do
     case type do
       :eq -> encode(:equals)
       :not_eq -> encode(:equals)

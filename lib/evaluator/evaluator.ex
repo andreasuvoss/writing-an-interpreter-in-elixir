@@ -94,7 +94,6 @@ defmodule Evaluator.Evaluator do
 
 
   def eval(%Parser.FunctionLiteral{} = function, %Environment{} = environment) do
-    # IO.inspect(environment)
     {:ok, %Function{parameters: function.parameters, body: function.body, env: environment}, environment}
   end
 
@@ -103,11 +102,11 @@ defmodule Evaluator.Evaluator do
       {:ok, function, env} -> case eval_expressions(call_expression.arguments, env) do
         {:ok, args, env} -> apply_function(function, args, env)
       end
+      {:error, error} -> {:error, error}
     end
   end
 
   defp apply_function(%Function{} = function, args, %Environment{} = environment) do
-    # extended_env = extend_function_env(function, args)
     case extend_function_env(function, args) do
       {:ok, extended_env} -> 
         case eval(function.body, extended_env) do
@@ -116,11 +115,9 @@ defmodule Evaluator.Evaluator do
         end
       {:error, error} -> {:error, error}
     end
-
-    
   end
 
-  def extend_function_env(%Function{} = function, args) do
+  defp extend_function_env(%Function{} = function, args) do
     if length(function.parameters) != length(args) do
       {:error, create_error("wrong number of arguments passed to the function #{function.name}")}
     else
@@ -144,9 +141,7 @@ defmodule Evaluator.Evaluator do
   # WORKS: let a = fn(x) { if(x > 10) { true } else { a(x + 1) } }
   # DOESNT: let a = fn(x) { if(x > 10) { true } else { let y = 1; a(x + 1) }}
 
-  # defp unwrap_return_value() do
-  #   
-  # end
+  # let q = fn(x){ let z = fn(x){ if(x > 10) { true;} else {z(x+1)}} z(x)}
 
   defp eval_expressions(_, acc \\ [], _)
   defp eval_expressions([expression | tail], acc, %Environment{} = environment) do
@@ -252,15 +247,11 @@ defmodule Evaluator.Evaluator do
     end
   end
 
-  def eval_block_statements([statement], %Environment{} = environment) do
-    # IO.inspect(statement)
-    # IO.inspect(environment)
+  defp eval_block_statements([statement], %Environment{} = environment) do
     eval(statement, environment)
   end
   
-  def eval_block_statements([statement | tail], %Environment{} = environment) do
-    # IO.inspect(statement)
-    # IO.inspect(environment)
+  defp eval_block_statements([statement | tail], %Environment{} = environment) do
     case eval(statement, environment) do
       {:ok, %Evaluator.Return{} = value, env} -> {:ok, value, env}
       {:error, error} -> {:error, error}
@@ -268,13 +259,9 @@ defmodule Evaluator.Evaluator do
     end
   end
 
-  
-  def eval_block_statements([], %Environment{} = environment) do
+  defp eval_block_statements([], %Environment{} = environment) do
     {:ok, %Null{}, environment}
   end
-
-
-  # let q = fn(x){ let z = fn(x){ if(x > 10) { true;} else {z(x+1)}} z(x)}
 
   defp create_error(message) do
     %Evaluator.Error{message: message}

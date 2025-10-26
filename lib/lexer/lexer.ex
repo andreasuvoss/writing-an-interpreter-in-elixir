@@ -1,6 +1,11 @@
 defmodule Lexer.Lexer do
   alias Lexer.Token
 
+  def tokenize(input) do
+    {tok, rest} = get_token(input)
+    if tok.type == :eof, do: [tok], else: [tok | tokenize(rest)]
+  end
+
   defp is_letter(nil), do: false
 
   defp is_letter(char) do
@@ -119,11 +124,8 @@ defmodule Lexer.Lexer do
 
   defp new_token(type, literal, input) do
     literal_length = String.length(literal)
-    {%Token{type: type, literal: literal}, String.slice(input, literal_length..String.length(input))}
-  end
 
-  def tokenize(input) do
-    {tok, rest} = get_token(input)
-    if tok.type == :eof, do: [tok], else: [tok | tokenize(rest)]
+    {%Token{type: type, literal: literal},
+     String.slice(input, literal_length..String.length(input))}
   end
 end
