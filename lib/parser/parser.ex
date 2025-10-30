@@ -7,6 +7,7 @@ defmodule Parser.Parser do
   alias Parser.PrefixExpression
   alias Parser.InfixExpression
   alias Parser.IntegerLiteral
+  alias Parser.StringLiteral
   alias Lexer.Token
   alias Parser.LetStatement
   alias Parser.ReturnStatement
@@ -255,6 +256,10 @@ defmodule Parser.Parser do
   end
   defp parse_call_arguments([], _), do: {:error, ["could not parse call arguments for call expression"], []}
 
+  defp parse_string_literal([%Token{type: :string} = token | tail]) do
+    {:ok, %StringLiteral{token: token, value: token.literal}, tail}
+  end
+
   defp parse_prefix([%Token{type: :bang} | _] = tokens), do: parse_prefix_expression(tokens)
   defp parse_prefix([%Token{type: :minus} | _] = tokens), do: parse_prefix_expression(tokens)
   defp parse_prefix([%Token{type: :plus} | _] = tokens), do: parse_prefix_expression(tokens)
@@ -269,11 +274,12 @@ defmodule Parser.Parser do
   defp parse_prefix([%Token{type: :false} | _] = tokens), do: parse_boolean(tokens)
   defp parse_prefix([%Token{type: :if} | _] = tokens), do: parse_if_expression(tokens)
   defp parse_prefix([%Token{type: :function} | tail]), do: parse_function_literal(tail)
+  defp parse_prefix([%Token{type: :string} | _] = tokens), do: parse_string_literal(tokens)
   defp parse_prefix([%Token{type: :lbrace} | tail]), do: {:error, ["found '{' without a function or if expression to start"], tail}
   defp parse_prefix([%Token{type: :rbrace} | tail]), do: {:error, ["found '}' without a block to close"], tail}
   defp parse_prefix([%Token{type: :else} | tail]), do: {:error, ["found else keyword with no prior if block"], tail}
   defp parse_prefix([%Token{type: :assign} | tail]), do: {:error, ["assignment '=' without let statement is not allowed"], tail}
-  defp parse_prefix([%Token{literal: literal} | tail]), do: {:error, ["cannot handle symbol '#{literal}' in the current context"], tail}
+  defp parse_prefix([%Token{literal: literal, type: type} | tail]), do: {:error, ["no prefix parse function for #{String.upcase(Atom.to_string(type))}: #{literal}"], tail}
 
   defp parse_infix_expression(node, [], _), do: {:ok, node, []}
   defp parse_infix_expression(left, [%Token{} = token | tail] = rest, precedence) do

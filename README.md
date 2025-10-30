@@ -67,6 +67,7 @@ type mismatch: INTEGER + BOOLEAN
 * Optional semicolons
 * Recursive functions
 * Closures
+* Strings (incl. builtin function `len(s)`)
 
 ## Run tests
 To run the tests the following command should be run. The `--no-start` flag makes sure only the tests run, if it's not

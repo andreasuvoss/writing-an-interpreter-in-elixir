@@ -25,6 +25,9 @@ defmodule LexerTest do
 
     10 == 10;
     10 != 9;
+    let x = "hello";
+    "foo bar";
+    "foobar";
     """
 
     tests = [
@@ -99,6 +102,15 @@ defmodule LexerTest do
       %Token{type: :int, literal: "10"},
       %Token{type: :not_eq, literal: "!="},
       %Token{type: :int, literal: "9"},
+      %Token{type: :semicolon, literal: ";"},
+      %Token{type: :let, literal: "let"},
+      %Token{type: :ident, literal: "x"},
+      %Token{type: :assign, literal: "="},
+      %Token{type: :string, literal: "hello"},
+      %Token{type: :semicolon, literal: ";"},
+      %Token{type: :string, literal: "foo bar"},
+      %Token{type: :semicolon, literal: ";"},
+      %Token{type: :string, literal: "foobar"},
       %Token{type: :semicolon, literal: ";"},
       %Token{type: :eof, literal: ""}
     ]

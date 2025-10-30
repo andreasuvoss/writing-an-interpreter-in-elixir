@@ -28,6 +28,16 @@ defmodule Lexer.Lexer do
     end
   end
 
+  defp read_string(input, i \\ 1) do
+    char = String.at(input, i)
+
+    if char != "\"" and char != nil do
+      read_string(input, i+1)
+    else
+      i
+    end
+  end
+
   defp read_number(input, i \\ 1) do
     char = String.at(input, i)
 
@@ -54,6 +64,15 @@ defmodule Lexer.Lexer do
         idx = read_number(input)
         value = String.slice(input, 0..idx)
         new_token(:int, value, input)
+      char == "\"" -> 
+        idx = read_string(input)
+        if idx == 1 do
+          string = ""
+          new_token(:string, string, String.length(string)+2, input)
+        else
+          string = String.slice(input, 1..idx-1)
+          new_token(:string, string, String.length(string)+2, input)
+        end
 
       true ->
         case char do
@@ -127,5 +146,10 @@ defmodule Lexer.Lexer do
 
     {%Token{type: type, literal: literal},
      String.slice(input, literal_length..String.length(input))}
+  end
+
+  defp new_token(type, literal, remove_length, input) do
+    {%Token{type: type, literal: literal},
+     String.slice(input, remove_length..String.length(input))}
   end
 end

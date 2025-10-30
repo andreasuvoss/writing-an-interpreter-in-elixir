@@ -2,13 +2,17 @@ defmodule Evaluator.Evaluator do
   # alias Parser.ReturnStatement
   # alias Evaluator.Boolean
   # alias Parser.Boolean
+  alias Evaluator.Object
+  alias Evaluator.Builtin
   alias Evaluator.Null
   alias Evaluator.Function
+  # alias Evaluator.String
   alias Evaluator.Environment
   alias Parser.ExpressionStatement
   # alias Parser.IfExpression
   alias Parser.BlockStatement
   alias Parser.IntegerLiteral
+  alias Parser.StringLiteral
   alias Evaluator.Integer
   alias Parser.Program
 
@@ -49,6 +53,10 @@ defmodule Evaluator.Evaluator do
     {:ok, %Integer{value: integer.value}, environment}
   end
 
+  def eval(%StringLiteral{} = string, %Environment{} = environment) do
+    {:ok, %Evaluator.String{value: string.value}, environment}
+  end
+
   def eval(%Parser.Boolean{} = bool, %Environment{} = environment) do
     {:ok, %Evaluator.Boolean{value: bool.value}, environment}
   end
@@ -74,7 +82,11 @@ defmodule Evaluator.Evaluator do
   def eval(%Parser.Identifier{} = identifier, %Environment{} = environment) do
     case Evaluator.Environment.get(environment, identifier.value) do
         {:ok, val} -> {:ok, val, environment}
-        {:error, error} -> {:error, create_error(error)}
+        # {:error, error} -> {:error, create_error(error)}
+        {:error, _} -> case get_builtin(identifier) do
+          {:ok, val} -> {:ok, val, environment}
+          {:error, error} ->{:error, create_error(error)}
+      end
     end
   end
 
@@ -106,6 +118,22 @@ defmodule Evaluator.Evaluator do
     end
   end
 
+  defp get_builtin(%Parser.Identifier{} = identifier) do
+    case identifier.value do
+      "len" -> {:ok, %Evaluator.Builtin{fn: fn [head | _] = args -> 
+        if length(args) != 1 do
+          {:error, create_error("wrong number of arguments got #{length(args)} want 1")}
+        else
+          case head do
+            %Evaluator.String{} -> {:ok, %Integer{value: String.length(head.value)}}
+            obj -> {:error, create_error("argument to `len` not supported, got #{Object.type(obj)}")}
+          end
+        end
+      end}}
+      _ -> {:error, "identifier not found: #{identifier.token.literal}"}
+    end
+  end
+
   defp apply_function(%Function{} = function, args, %Environment{} = environment) do
     case extend_function_env(function, args) do
       {:ok, extended_env} -> 
@@ -114,6 +142,16 @@ defmodule Evaluator.Evaluator do
           {:ok, val, _} -> {:ok, val, environment}
         end
       {:error, error} -> {:error, error}
+    end
+  end
+
+  defp apply_function(%Builtin{} = builtin, args, %Environment{} = environment) do
+    case length(args) do
+       0 -> {:error, create_error("please provide arguments for builtin")}
+       _ -> case builtin.fn.(args) do
+         {:ok, val} -> {:ok, val, environment}
+         {:error, error} -> {:error, error}
+       end
     end
   end
 
@@ -206,6 +244,19 @@ defmodule Evaluator.Evaluator do
     {:ok, %Evaluator.Boolean{value: left.value != right.value}, environment}
   end
 
+  defp eval_infix_expression("+", %Evaluator.String{} = left, %Evaluator.String{} = right, %Environment{} = environment) do
+    {:ok, %Evaluator.String{value: left.value <> right.value}, environment}
+  end
+
+  defp eval_infix_expression("!=", %Evaluator.String{} = left, %Evaluator.String{} = right, %Environment{} = environment) do
+    {:ok, %Evaluator.Boolean{value: left.value != right.value}, environment}
+  end
+
+  defp eval_infix_expression("==", %Evaluator.String{} = left, %Evaluator.String{} = right, %Environment{} = environment) do
+    {:ok, %Evaluator.Boolean{value: left.value == right.value}, environment}
+  end
+
+
   defp eval_infix_expression(operator, left, right, %Environment{} = _) do
     if Evaluator.Object.type(left) != Evaluator.Object.type(right) do
       {:error, create_error("type mismatch: #{Evaluator.Object.type(left)} #{operator} #{Evaluator.Object.type(right)}")}
@@ -264,6 +315,6 @@ defmodule Evaluator.Evaluator do
   end
 
   defp create_error(message) do
-    %Evaluator.Error{message: message}
+    %Evaluator.Error{message: "ERROR: #{message}"}
   end
 end

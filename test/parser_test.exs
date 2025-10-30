@@ -117,6 +117,23 @@ defmodule ParserTest do
   end
 
   @tag disabled: true
+  test "string expression" do
+    input = "\"hello\";"
+
+    tokens = Lexer.tokenize(input)
+
+    {:ok, program} = Parser.Parser.parse_program(tokens)
+
+    assert length(program.statements) == 1
+
+    statement = program.statements |> Enum.at(0)
+    assert %Parser.ExpressionStatement{} = statement
+
+    assert %Parser.StringLiteral{token: %Token{type: :string, literal: "hello"}, value: "hello"} =
+             statement.expression
+  end
+
+  @tag disabled: true
   test "prefix bang" do
     input = "!5;"
 

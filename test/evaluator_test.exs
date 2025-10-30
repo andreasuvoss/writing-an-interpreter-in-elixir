@@ -56,6 +56,10 @@ defmodule EvaluatorTest do
       %{input: "(1 < 2) == false", expected: false},
       %{input: "(1 > 2) == true", expected: false},
       %{input: "(1 > 2) == false", expected: true},
+      %{input: "\"test\" == \"test\"", expected: true},
+      %{input: "\"test\" == \"test1\"", expected: false},
+      %{input: "\"test\" != \"test\"", expected: false},
+      %{input: "\"test\" != \"test1\"", expected: true},
     ]
 
     tests
@@ -131,15 +135,15 @@ defmodule EvaluatorTest do
   @tag disabled: true
   test "error handling" do
     tests = [
-      %{input: "5 + true;", expected: "type mismatch: INTEGER + BOOLEAN"},
-      %{input: "5 + true; 5;", expected: "type mismatch: INTEGER + BOOLEAN"},
-      %{input: "-true", expected: "unknown operator: -BOOLEAN"},
-      %{input: "true + false", expected: "unknown operator: BOOLEAN + BOOLEAN"},
-      %{input: "5; true + false; 5", expected: "unknown operator: BOOLEAN + BOOLEAN"},
-      %{input: "if(10 > 1){ true + false; }", expected: "unknown operator: BOOLEAN + BOOLEAN"},
-      %{input: "if(10 > 1){if(10 > 1){ true + false; } return 1; }", expected: "unknown operator: BOOLEAN + BOOLEAN"},
-      %{input: "if(10 > 1){if(10 > 1){ 1 + false; } return 1; }", expected: "type mismatch: INTEGER + BOOLEAN"},
-      %{input: "foobar", expected: "identifier not found: foobar"},
+      %{input: "5 + true;", expected: "ERROR: type mismatch: INTEGER + BOOLEAN"},
+      %{input: "5 + true; 5;", expected: "ERROR: type mismatch: INTEGER + BOOLEAN"},
+      %{input: "-true", expected: "ERROR: unknown operator: -BOOLEAN"},
+      %{input: "true + false", expected: "ERROR: unknown operator: BOOLEAN + BOOLEAN"},
+      %{input: "5; true + false; 5", expected: "ERROR: unknown operator: BOOLEAN + BOOLEAN"},
+      %{input: "if(10 > 1){ true + false; }", expected: "ERROR: unknown operator: BOOLEAN + BOOLEAN"},
+      %{input: "if(10 > 1){if(10 > 1){ true + false; } return 1; }", expected: "ERROR: unknown operator: BOOLEAN + BOOLEAN"},
+      %{input: "if(10 > 1){if(10 > 1){ 1 + false; } return 1; }", expected: "ERROR: type mismatch: INTEGER + BOOLEAN"},
+      %{input: "foobar", expected: "ERROR: identifier not found: foobar"},
     ]
 
     tests
@@ -253,15 +257,77 @@ defmodule EvaluatorTest do
       assert create_boolean(true) == evaluated
   end
 
+  @tag disabled: true
+  test "strings" do
+    input = """
+      let text = "some text";
+      """
+
+      tokens = Lexer.Lexer.tokenize(input)
+      {:ok, program} = Parser.Parser.parse_program(tokens)
+      {:ok, evaluated, _} = Evaluator.Evaluator.eval(program, %Evaluator.Environment{})
+
+      assert create_string("some text") == evaluated
+  end
+
+  @tag disabled: true
+  test "string concat" do
+    input = """
+      "Hello" + " " + "World!"
+      """
+
+      tokens = Lexer.Lexer.tokenize(input)
+      {:ok, program} = Parser.Parser.parse_program(tokens)
+      {:ok, evaluated, _} = Evaluator.Evaluator.eval(program, %Evaluator.Environment{})
+
+      assert create_string("Hello World!") == evaluated
+  end
+
+
+  @tag disabled: true
+  test "builtin string functions" do
+    tests = [
+      %{input: "len(\"\")", expected: 0},
+      %{input: "len(\"hello\")", expected: 5},
+      %{input: "len(\"four\")", expected: 4},
+      %{input: "len(\"hello world\")", expected: 11},
+    ]
+
+    tests
+    |> Enum.each(fn test ->
+      tokens = Lexer.Lexer.tokenize(test.input)
+      {:ok, program} = Parser.Parser.parse_program(tokens)
+      {:ok, evaluated, _} = Evaluator.Evaluator.eval(program, %Evaluator.Environment{})
+      assert create_integer(test.expected) == evaluated
+    end)
+  end
+
+  @tag disabled: true
+  test "builtin errors" do
+    tests = [
+      %{input: "len(1)", expected: %Evaluator.Error{message: "ERROR: argument to `len` not supported, got INTEGER"}},
+      %{input: "len(\"one\", \"two\")", expected: %Evaluator.Error{message: "ERROR: wrong number of arguments got 2 want 1"}},
+    ]
+
+    tests
+    |> Enum.each(fn test ->
+      tokens = Lexer.Lexer.tokenize(test.input)
+      {:ok, program} = Parser.Parser.parse_program(tokens)
+      {:error, evaluated} = Evaluator.Evaluator.eval(program, %Evaluator.Environment{})
+      assert test.expected == evaluated
+    end)
+  end
 
   defp create_boolean(value) do
     %Evaluator.Boolean{value: value}
   end
-
   defp create_integer(nil) do
     %Evaluator.Null{}
   end
   defp create_integer(value) do
     %Evaluator.Integer{value: value}
+  end
+  defp create_string(value) do
+    %Evaluator.String{value: value}
   end
 end
