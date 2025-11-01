@@ -1,4 +1,5 @@
 defmodule EvaluatorTest do
+  # alias Evaluator.Integer
   # alias Evaluator.Boolean
   # alias Evaluator.Integer
   use ExUnit.Case
@@ -27,7 +28,7 @@ defmodule EvaluatorTest do
     |> Enum.each(fn test ->
       tokens = Lexer.Lexer.tokenize(test.input)
       {:ok, program} = Parser.Parser.parse_program(tokens)
-      {:ok, evaluated, _} = Evaluator.Evaluator.eval(program, %Evaluator.Environment{})
+      {:ok, evaluated, _} = Evaluator.eval(program, %Evaluator.Environment{})
 
       assert create_integer(test.expected) == evaluated
     end)
@@ -66,7 +67,7 @@ defmodule EvaluatorTest do
     |> Enum.each(fn test ->
       tokens = Lexer.Lexer.tokenize(test.input)
       {:ok, program} = Parser.Parser.parse_program(tokens)
-      {:ok, evaluated, _} = Evaluator.Evaluator.eval(program, %Evaluator.Environment{})
+      {:ok, evaluated, _} = Evaluator.eval(program, %Evaluator.Environment{})
       assert create_boolean(test.expected) == evaluated
     end)
   end
@@ -86,7 +87,7 @@ defmodule EvaluatorTest do
     |> Enum.each(fn test ->
       tokens = Lexer.Lexer.tokenize(test.input)
       {:ok, program} = Parser.Parser.parse_program(tokens)
-      {:ok, evaluated, _} = Evaluator.Evaluator.eval(program, %Evaluator.Environment{})
+      {:ok, evaluated, _} = Evaluator.eval(program, %Evaluator.Environment{})
       assert create_boolean(test.expected) == evaluated
     end)
   end
@@ -107,7 +108,7 @@ defmodule EvaluatorTest do
     |> Enum.each(fn test ->
       tokens = Lexer.Lexer.tokenize(test.input)
       {:ok, program} = Parser.Parser.parse_program(tokens)
-      {:ok, evaluated, _} = Evaluator.Evaluator.eval(program, %Evaluator.Environment{})
+      {:ok, evaluated, _} = Evaluator.eval(program, %Evaluator.Environment{})
       assert create_integer(test.expected) == evaluated
     end)
   end
@@ -127,7 +128,7 @@ defmodule EvaluatorTest do
     |> Enum.each(fn test ->
       tokens = Lexer.Lexer.tokenize(test.input)
       {:ok, program} = Parser.Parser.parse_program(tokens)
-      {:ok, evaluated, _} = Evaluator.Evaluator.eval(program, %Evaluator.Environment{})
+      {:ok, evaluated, _} = Evaluator.eval(program, %Evaluator.Environment{})
       assert create_integer(test.expected) == evaluated
     end)
   end
@@ -150,8 +151,8 @@ defmodule EvaluatorTest do
     |> Enum.each(fn test ->
       tokens = Lexer.Lexer.tokenize(test.input)
       {:ok, program} = Parser.Parser.parse_program(tokens)
-      # {:error, evaluated} = Evaluator.Evaluator.eval(program)
-      {status, error} = Evaluator.Evaluator.eval(program, %Evaluator.Environment{})
+      # {:error, evaluated} = Evaluator.eval(program)
+      {status, error} = Evaluator.eval(program, %Evaluator.Environment{})
       assert status == :error
       assert error.message == test.expected
     end)
@@ -171,7 +172,7 @@ defmodule EvaluatorTest do
     |> Enum.each(fn test ->
       tokens = Lexer.Lexer.tokenize(test.input)
       {:ok, program} = Parser.Parser.parse_program(tokens)
-      {:ok, evaluated, _} = Evaluator.Evaluator.eval(program, %Evaluator.Environment{})
+      {:ok, evaluated, _} = Evaluator.eval(program, %Evaluator.Environment{})
       assert create_integer(test.expected) == evaluated
     end)
   end
@@ -190,7 +191,7 @@ defmodule EvaluatorTest do
     |> Enum.each(fn test ->
       tokens = Lexer.Lexer.tokenize(test.input)
       {:ok, program} = Parser.Parser.parse_program(tokens)
-      {:ok, evaluated, _} = Evaluator.Evaluator.eval(program, %Evaluator.Environment{})
+      {:ok, evaluated, _} = Evaluator.eval(program, %Evaluator.Environment{})
       assert %Evaluator.Function{} = evaluated
     end)
   end
@@ -210,7 +211,7 @@ defmodule EvaluatorTest do
     |> Enum.each(fn test ->
       tokens = Lexer.Lexer.tokenize(test.input)
       {:ok, program} = Parser.Parser.parse_program(tokens)
-      {:ok, evaluated, _} = Evaluator.Evaluator.eval(program, %Evaluator.Environment{})
+      {:ok, evaluated, _} = Evaluator.eval(program, %Evaluator.Environment{})
       assert create_integer(test.expected) == evaluated
     end)
   end
@@ -229,7 +230,7 @@ defmodule EvaluatorTest do
 
       tokens = Lexer.Lexer.tokenize(input)
       {:ok, program} = Parser.Parser.parse_program(tokens)
-      {:ok, evaluated, _} = Evaluator.Evaluator.eval(program, %Evaluator.Environment{})
+      {:ok, evaluated, _} = Evaluator.eval(program, %Evaluator.Environment{})
 
       assert create_integer(4) == evaluated
   end
@@ -252,7 +253,7 @@ defmodule EvaluatorTest do
 
       tokens = Lexer.Lexer.tokenize(input)
       {:ok, program} = Parser.Parser.parse_program(tokens)
-      {:ok, evaluated, _} = Evaluator.Evaluator.eval(program, %Evaluator.Environment{})
+      {:ok, evaluated, _} = Evaluator.eval(program, %Evaluator.Environment{})
 
       assert create_boolean(true) == evaluated
   end
@@ -265,7 +266,7 @@ defmodule EvaluatorTest do
 
       tokens = Lexer.Lexer.tokenize(input)
       {:ok, program} = Parser.Parser.parse_program(tokens)
-      {:ok, evaluated, _} = Evaluator.Evaluator.eval(program, %Evaluator.Environment{})
+      {:ok, evaluated, _} = Evaluator.eval(program, %Evaluator.Environment{})
 
       assert create_string("some text") == evaluated
   end
@@ -278,27 +279,78 @@ defmodule EvaluatorTest do
 
       tokens = Lexer.Lexer.tokenize(input)
       {:ok, program} = Parser.Parser.parse_program(tokens)
-      {:ok, evaluated, _} = Evaluator.Evaluator.eval(program, %Evaluator.Environment{})
+      {:ok, evaluated, _} = Evaluator.eval(program, %Evaluator.Environment{})
 
       assert create_string("Hello World!") == evaluated
   end
 
+  @tag disabled: true
+  test "array literals" do
+    input = """
+      let myArray = [1,2,2 * 2,3 + 3]
+      """
+
+      tokens = Lexer.Lexer.tokenize(input)
+      {:ok, program} = Parser.Parser.parse_program(tokens)
+      {:ok, evaluated, _} = Evaluator.eval(program, %Evaluator.Environment{})
+
+      assert Enum.at(evaluated.elements, 0) == create_integer(1)
+      assert Enum.at(evaluated.elements, 1) == create_integer(2)
+      assert Enum.at(evaluated.elements, 2) == create_integer(4)
+      assert Enum.at(evaluated.elements, 3) == create_integer(6)
+  end
 
   @tag disabled: true
-  test "builtin string functions" do
+  test "array indicies" do
     tests = [
-      %{input: "len(\"\")", expected: 0},
-      %{input: "len(\"hello\")", expected: 5},
-      %{input: "len(\"four\")", expected: 4},
-      %{input: "len(\"hello world\")", expected: 11},
+      %{input: "[1, 2, 3][0]", expected: 1},
+      %{input: "[1, 2, 3][1]", expected: 2},
+      %{input: "[1, 2, 3][2]", expected: 3},
+      %{input: "let i = 0; [1][i]", expected: 1},
+      %{input: "[1, 2, 3][1 + 1]", expected: 3},
+      %{input: "let myArray = [1, 2, 3]; myArray[2]", expected: 3},
+      %{input: "let myArray = [1, 2, 3]; myArray[0] + 1", expected: 2},
+      %{input: "let myArray = [1, 2, 3]; myArray[0] + myArray[1] + myArray[2]", expected: 6},
+      %{input: "let myArray = [1, 2, 3]; let i = myArray[0]; myArray[i]", expected: 2},
+      %{input: "[1, 2, 3][3]", expected: nil},
+      %{input: "[1, 2, 3][-1]", expected: nil}
     ]
 
     tests
     |> Enum.each(fn test ->
       tokens = Lexer.Lexer.tokenize(test.input)
       {:ok, program} = Parser.Parser.parse_program(tokens)
-      {:ok, evaluated, _} = Evaluator.Evaluator.eval(program, %Evaluator.Environment{})
+      # IO.puts(program)
+      {:ok, evaluated, _} = Evaluator.eval(program, %Evaluator.Environment{})
       assert create_integer(test.expected) == evaluated
+    end)
+  end
+
+
+  @tag disabled: true
+  test "builtin functions" do
+    tests = [
+      %{input: "len(\"\")", expected: create_integer(0)},
+      %{input: "len(\"hello\")", expected: create_integer(5)},
+      %{input: "len(\"four\")", expected: create_integer(4)},
+      %{input: "len(\"hello world\")", expected: create_integer(11)},
+      %{input: "len([1,2,3])", expected: create_integer(3)},
+      %{input: "let x = [1,2]; len(x)", expected: create_integer(2)},
+      %{input: "let x = [1,2]; first(x)", expected: create_integer(1)},
+      %{input: "let x = [1,2]; last(x)", expected: create_integer(2)},
+      %{input: "let x = [1,2]; rest(x)", expected: create_array([create_integer(2)])},
+      %{input: "let x = [1,2,4]; rest(x)", expected: create_array([create_integer(2), create_integer(4)])},
+      %{input: "let a = [1,2,3,4]; rest(rest(a))", expected: create_array([create_integer(3), create_integer(4)])},
+      %{input: "let a = [1,2,3,4]; let b = push(a, 5); b", expected: create_array([create_integer(1), create_integer(2), create_integer(3), create_integer(4), create_integer(5)])},
+      %{input: "let a = [1,2,3,4]; let b = push(a, 5); a", expected: create_array([create_integer(1), create_integer(2), create_integer(3), create_integer(4)])},
+    ]
+
+    tests
+    |> Enum.each(fn test ->
+      tokens = Lexer.Lexer.tokenize(test.input)
+      {:ok, program} = Parser.Parser.parse_program(tokens)
+      {:ok, evaluated, _} = Evaluator.eval(program, %Evaluator.Environment{})
+      assert test.expected == evaluated
     end)
   end
 
@@ -313,7 +365,7 @@ defmodule EvaluatorTest do
     |> Enum.each(fn test ->
       tokens = Lexer.Lexer.tokenize(test.input)
       {:ok, program} = Parser.Parser.parse_program(tokens)
-      {:error, evaluated} = Evaluator.Evaluator.eval(program, %Evaluator.Environment{})
+      {:error, evaluated} = Evaluator.eval(program, %Evaluator.Environment{})
       assert test.expected == evaluated
     end)
   end
@@ -329,5 +381,8 @@ defmodule EvaluatorTest do
   end
   defp create_string(value) do
     %Evaluator.String{value: value}
+  end
+  defp create_array(elements) do
+    %Evaluator.Array{elements: elements}
   end
 end

@@ -68,6 +68,7 @@ type mismatch: INTEGER + BOOLEAN
 * Recursive functions
 * Closures
 * Strings (incl. builtin function `len(s)`)
+* Arrays (incl. builtin functions `len(arr)`, `first(arr)`, `last(arr)` and `rest(arr)`)
 
 ## Run tests
 To run the tests the following command should be run. The `--no-start` flag makes sure only the tests run, if it's not

@@ -5,9 +5,14 @@ defmodule Evaluator.Boolean do
     def type(_) do
       "BOOLEAN"
     end
+  end
 
-    def inspect(object) do
-      IO.puts(object.value)
+  defimpl String.Chars, for: Evaluator.Boolean do
+    def to_string(%Evaluator.Boolean{} = bool) do
+      case bool.value do
+        true -> "true"
+        false -> "false"
+      end
     end
   end
 end

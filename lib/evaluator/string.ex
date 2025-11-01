@@ -5,9 +5,11 @@ defmodule Evaluator.String do
     def type(_) do
       "STRING"
     end
+  end
 
-    def inspect(object) do
-      IO.puts("\"#{object.value}\"")
+  defimpl String.Chars, for: Evaluator.String do
+    def to_string(%Evaluator.String{} = string) do
+      string.value
     end
   end
 end

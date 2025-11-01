@@ -28,6 +28,7 @@ defmodule LexerTest do
     let x = "hello";
     "foo bar";
     "foobar";
+    ["test", 5];
     """
 
     tests = [
@@ -111,6 +112,12 @@ defmodule LexerTest do
       %Token{type: :string, literal: "foo bar"},
       %Token{type: :semicolon, literal: ";"},
       %Token{type: :string, literal: "foobar"},
+      %Token{type: :semicolon, literal: ";"},
+      %Token{type: :lbracket, literal: "["},
+      %Token{type: :string, literal: "test"},
+      %Token{type: :comma, literal: ","},
+      %Token{type: :int, literal: "5"},
+      %Token{type: :rbracket, literal: "]"},
       %Token{type: :semicolon, literal: ";"},
       %Token{type: :eof, literal: ""}
     ]

@@ -5,9 +5,11 @@ defmodule Evaluator.Null do
     def type(_) do
       "NULL"
     end
+  end
 
-    def inspect(_) do
-      IO.puts("null")
+  defimpl String.Chars, for: Evaluator.Null do
+    def to_string(%Evaluator.Null{}) do
+      "null"
     end
   end
 end

@@ -99,6 +99,11 @@ defmodule Lexer.Lexer do
 
           "}" ->
             new_token(:rbrace, char, input)
+          "[" ->
+            new_token(:lbracket, char, input)
+
+          "]" ->
+            new_token(:rbracket, char, input)
 
           "," ->
             new_token(:comma, char, input)

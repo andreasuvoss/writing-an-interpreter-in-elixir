@@ -23,7 +23,7 @@ defmodule Repl.Repl do
         case Parser.Parser.parse_program(tokens) do
           {:ok, program} -> 
             case Evaluator.Evaluator.eval(program, env) do
-              {:ok, evaluated, env} -> Evaluator.Object.inspect(evaluated)
+              {:ok, evaluated, env} -> IO.puts(evaluated)
                 loop(env)
               {:error, error} -> IO.puts(IO.ANSI.red() <> error.message <> IO.ANSI.reset())
                 loop(env)

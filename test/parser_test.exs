@@ -1,4 +1,6 @@
 defmodule ParserTest do
+  alias Parser.ArrayLiteral
+  alias Parser.ExpressionStatement
   alias Parser.Boolean
   alias Parser.IntegerLiteral
   alias Parser.InfixExpression
@@ -218,7 +220,9 @@ defmodule ParserTest do
       %{input: "(5 + 5) * 2", expected: "((5 + 5) * 2)"},
       %{input: "2 / (5 + 5)", expected: "(2 / (5 + 5))"},
       %{input: "-(5 + 5)", expected: "(-(5 + 5))"},
-      %{input: "!(true == true)", expected: "(!(true == true))"}
+      %{input: "!(true == true)", expected: "(!(true == true))"},
+      %{input: "a * [1, 2, 3, 4][b * c] * d", expected: "((a * ([1, 2, 3, 4][(b * c)])) * d)"},
+      %{input: "add(a * b[2], b[1], 2 * [1, 2][1])", expected: "add((a * (b[2])), (b[1]), (2 * ([1, 2][1])))"}
     ]
 
     tests
@@ -497,6 +501,71 @@ defmodule ParserTest do
   end
 
   @tag disabled: true
+  test "arrays" do
+    tests = [
+      %{input: "[1, 2 * 2, 3 + 3]", expected: %ExpressionStatement{expression: %ArrayLiteral{
+        elements: [
+          %Parser.IntegerLiteral{token: %Token{literal: "1", type: :int}, value: 1},
+          %Parser.InfixExpression{left: %Parser.IntegerLiteral{token: %Token{type: :int, literal: "2"}, value: 2}, operator: "*", right: %Parser.IntegerLiteral{token: %Token{type: :int, literal: "2"}, value: 2}, token: %Token{literal: "*", type: :asterix}},
+          %Parser.InfixExpression{left: %Parser.IntegerLiteral{token: %Token{type: :int, literal: "3"}, value: 3}, operator: "+", right: %Parser.IntegerLiteral{token: %Token{type: :int, literal: "3"}, value: 3}, token: %Token{literal: "+", type: :plus}}
+        ]
+      }}},
+    ]
+
+    tests
+    |> Enum.each(fn test ->
+      tokens = Lexer.tokenize(test.input)
+      {:ok, program} = Parser.Parser.parse_program(tokens)
+
+      statement = program.statements |> Enum.at(0)
+
+      assert statement == test.expected
+    end)
+  end
+
+  @tag disabled: true
+  test "array index" do
+    tests = [
+      %{input: "foobar[1]", expected: %Parser.ExpressionStatement{expression: %Parser.IndexExpression{index: %Parser.IntegerLiteral{token: %Token{type: :int, literal: "1"}, value: 1}, left: %Parser.Identifier{token: %Token{type: :ident, literal: "foobar"}, value: "foobar"}, token: %Token{literal: "[", type: :lbracket}}, token: %Token{literal: nil, type: :expression}}},
+    ]
+
+    tests
+    |> Enum.each(fn test ->
+      tokens = Lexer.tokenize(test.input)
+      {:ok, program} = Parser.Parser.parse_program(tokens)
+
+      statement = program.statements |> Enum.at(0)
+
+      assert statement == test.expected
+    end)
+  end
+
+  @tag disabled: true
+  test "array index plus" do
+    tests = [
+      %{input: "foobar[1] + 1", expected: %Parser.ExpressionStatement{
+              expression: %Parser.InfixExpression{
+                left: %Parser.IndexExpression{index: %Parser.IntegerLiteral{value: 1, token: %Token{type: :int, literal: "1"}}, left: %Parser.Identifier{value: "foobar", token: %Token{type: :ident, literal: "foobar"}}, token: %Token{type: :lbracket, literal: "["}},
+                operator: "+",
+                right: %Parser.IntegerLiteral{token: %Token{type: :int, literal: "1"}, value: 1},
+                token: %Token{literal: "+", type: :plus}
+              },
+              token: %Token{literal: nil, type: :expression}
+            }},
+    ]
+
+    tests
+    |> Enum.each(fn test ->
+      tokens = Lexer.tokenize(test.input)
+      {:ok, program} = Parser.Parser.parse_program(tokens)
+
+      statement = program.statements |> Enum.at(0)
+
+      assert statement == test.expected
+    end)
+  end
+
+  @tag disabled: true
   test "let and return statements" do
     tests = [
       %{
@@ -547,7 +616,7 @@ defmodule ParserTest do
   test "does it parse" do
     inputs = [
       "let add = fn(){ if(1 == 1) { x } else { y; let q = 1; } }",
-      "let fibonacci = fn(x) { if (x == 0) { 0 } else { if (x == 1) { return 1; } else { fibonacci(x - 1) +fibonacci(x - 2); } } };",
+      "let fibonacci = fn(x) { if (x == 0) { 0 } else { if (x == 1) { return 1; } else { fibonacci(x - 1) + fibonacci(x - 2); } } };",
       "if(true){}",
       "if(true){ let y = 7 } else { let x = 1 }",
       "if(true){ let a = fn(x,y,z){if(x>y>z){ print(x); return x; } else {print(y); print(z) return z;}}}"
@@ -556,6 +625,9 @@ defmodule ParserTest do
     inputs |> Enum.each(fn input -> 
       tokens = Lexer.tokenize(input)
       {result, _} = Parser.Parser.parse_program(tokens)
+      if result == :error do
+        IO.puts(input)
+      end
       assert result == :ok
     end)
   end
@@ -563,7 +635,7 @@ defmodule ParserTest do
   test "fail parsing" do
     tests = [
       %{input: "let add = fn(){ if(1 == 1) { x  else { y; let q = 1; } }", errors: 4},
-      %{input: "let fibonacci = fn(x) { else { if (x == 1) { return 1; } else { fibonacci(x - 1) +fibonacci(x - 2); }}};", errors: 1},
+      %{input: "let fibonacci = fn(x) { else { if (x == 1) { return 1; } else { fibonacci(x - 1) + fibonacci(x - 2); }}};", errors: 1},
       %{input: "else", errors: 4},
       %{input: "if(true){ u = 7 } else { let x = 1 }", errors: 5},
       %{input: "if(true){ let a = fn(x,y.z){if(x>y>z){ print(x); return x; } else {print(y); print(z) return z;}}}",

@@ -5,9 +5,11 @@ defmodule Evaluator.Builtin do
     def type(_) do
       "BUILTIN"
     end
+  end
 
-    def inspect(_) do
-      # IO.puts(object.value)
+  defimpl String.Chars, for: Evaluator.Builtin do
+    def to_string(%Evaluator.Builtin{}) do
+      "builtin function"
     end
   end
 end

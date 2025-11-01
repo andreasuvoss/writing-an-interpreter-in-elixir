@@ -1,4 +1,5 @@
 defmodule Parser.Parser do
+  alias Parser.IndexExpression
   alias Parser.CallExpression
   alias Parser.FunctionLiteral
   alias Parser.BlockStatement
@@ -21,7 +22,8 @@ defmodule Parser.Parser do
     sum: 4,
     product: 5,
     prefix: 6,
-    call: 7
+    call: 7,
+    index: 8
   ]
 
   for {key, value} <- precedence_constants do
@@ -40,6 +42,7 @@ defmodule Parser.Parser do
       :slash -> encode(:product)
       :asterix -> encode(:product)
       :lparen -> encode(:call)
+      :lbracket -> encode(:index)
       _ -> encode(:lowest)
     end
   end
@@ -231,6 +234,7 @@ defmodule Parser.Parser do
   end
   defp parse_function_parameters([], _), do: {:error, ["could not parse function parameters for function literal"], []}
 
+
   defp parse_call_expression([token | rest], function) do
     if token.type != :lparen do
       {:error, ["expected '(' to start call expression got '#{token.literal}'"], rest}
@@ -242,37 +246,40 @@ defmodule Parser.Parser do
     end
   end
 
-  defp parse_call_arguments(a, acc \\ [])
-  defp parse_call_arguments([token | tokens], acc) do
+  defp parse_call_arguments(a, acc \\ [], end_token \\ :rparen)
+  defp parse_call_arguments([token | tokens], acc, end_token) do
     case token.type do
-      :rparen -> {:ok, Enum.reverse(acc), tokens}
-      :comma -> parse_call_arguments(tokens, acc)
+       ^end_token -> {:ok, Enum.reverse(acc), tokens}
+      :comma -> parse_call_arguments(tokens, acc, end_token)
       _ -> 
         case parse_expression([token | tokens], :lowest) do
-          {:ok, expr, tokens} -> parse_call_arguments(tokens, [expr | acc])
+          {:ok, expr, tokens} -> 
+            parse_call_arguments(tokens, [expr | acc], end_token)
           {:error, errors, tail} -> {:error, errors, tail}
         end
     end
   end
-  defp parse_call_arguments([], _), do: {:error, ["could not parse call arguments for call expression"], []}
+  defp parse_call_arguments([], _, _), do: {:error, ["could not parse call arguments for call expression"], []}
 
   defp parse_string_literal([%Token{type: :string} = token | tail]) do
     {:ok, %StringLiteral{token: token, value: token.literal}, tail}
   end
 
+  defp parse_array_literal(tokens) do
+    case parse_call_arguments(tokens, [], :rbracket) do
+      {:ok, elements, tokens} -> {:ok, %Parser.ArrayLiteral{elements: elements}, tokens}
+    end
+  end
+
   defp parse_prefix([%Token{type: :bang} | _] = tokens), do: parse_prefix_expression(tokens)
   defp parse_prefix([%Token{type: :minus} | _] = tokens), do: parse_prefix_expression(tokens)
-  defp parse_prefix([%Token{type: :plus} | _] = tokens), do: parse_prefix_expression(tokens)
-  defp parse_prefix([%Token{type: :gt} | _] = tokens), do: parse_prefix_expression(tokens)
-  defp parse_prefix([%Token{type: :lt} | _] = tokens), do: parse_prefix_expression(tokens)
-  defp parse_prefix([%Token{type: :eq} | _] = tokens), do: parse_prefix_expression(tokens)
-  defp parse_prefix([%Token{type: :not_eq} | _] = tokens), do: parse_prefix_expression(tokens)
   defp parse_prefix([%Token{type: :lparen} | _] = tokens), do: parse_grouped_expression(tokens)
   defp parse_prefix([%Token{type: :int} | _] = tokens), do: parse_integer_literal(tokens)
   defp parse_prefix([%Token{type: :ident} | _] = tokens), do: parse_identifier(tokens)
   defp parse_prefix([%Token{type: :true} | _] = tokens), do: parse_boolean(tokens)
   defp parse_prefix([%Token{type: :false} | _] = tokens), do: parse_boolean(tokens)
   defp parse_prefix([%Token{type: :if} | _] = tokens), do: parse_if_expression(tokens)
+  defp parse_prefix([%Token{type: :lbracket} | tail]), do: parse_array_literal(tail)
   defp parse_prefix([%Token{type: :function} | tail]), do: parse_function_literal(tail)
   defp parse_prefix([%Token{type: :string} | _] = tokens), do: parse_string_literal(tokens)
   defp parse_prefix([%Token{type: :lbrace} | tail]), do: {:error, ["found '{' without a function or if expression to start"], tail}
@@ -285,13 +292,17 @@ defmodule Parser.Parser do
   defp parse_infix_expression(left, [%Token{} = token | tail] = rest, precedence) do
     current_precedence = precedence_of(token)
 
-    # TODO: Might be something about a semicolon here?
     if current_precedence > precedence and infix_operator?(token) and token.type != :semicolon do
-    # if current_precedence > precedence and infix_operator?(token) do
-      if token.type == :lparen do
-        parse_call_expression([token | tail], left)
-      else
-        case parse_expression(tail, decode(current_precedence)) do
+      case token.type do
+        :lparen -> case parse_call_expression([token | tail], left) do
+          {:ok, call, tail} -> parse_infix_expression(call, tail, precedence)
+          {:error, errors, rest} -> {:error, errors, rest}
+        end
+        :lbracket -> case parse_index_expression([token | tail], left) do
+          {:ok, index, tail} -> parse_infix_expression(index, tail, precedence)
+          {:error, errors, rest} -> {:error, errors, rest}
+        end
+          _ -> case parse_expression(tail, decode(current_precedence)) do
           {:ok, right, rest} ->  
             infix = %InfixExpression{token: token, left: left, operator: token.literal, right: right}
             parse_infix_expression(infix, rest, precedence)
@@ -303,6 +314,14 @@ defmodule Parser.Parser do
     end
   end
 
+  defp parse_index_expression([token | tail], left) do
+    case parse_expression(tail, :lowest) do
+      {:ok, val, [%Token{type: :rbracket} | tail]} -> {:ok, %IndexExpression{token: token, left: left, index: val}, tail}
+      {:error, errors, rest} -> {:error, errors, rest}
+    end
+    
+  end
+
   defp parse_expression(tokens, precedence \\ :_) do
     case parse_prefix(tokens) do
       {:ok, left, rest} -> parse_infix_expression(left, rest, encode(precedence))
@@ -312,6 +331,6 @@ defmodule Parser.Parser do
   end
 
   defp infix_operator?(%Token{type: t}) do
-    t in [:plus, :minus, :asterix, :slash, :gt, :lt, :eq, :not_eq, :lparen]
+    t in [:plus, :minus, :asterix, :slash, :gt, :lt, :eq, :not_eq, :lparen, :lbracket]
   end
 end
