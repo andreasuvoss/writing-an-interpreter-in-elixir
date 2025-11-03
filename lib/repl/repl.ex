@@ -22,7 +22,7 @@ defmodule Repl.Repl do
         tokens = Lexer.Lexer.tokenize(String.trim(input))
         case Parser.Parser.parse_program(tokens) do
           {:ok, program} -> 
-            case Evaluator.Evaluator.eval(program, env) do
+            case Evaluator.eval(program, env) do
               {:ok, evaluated, env} -> IO.puts(evaluated)
                 loop(env)
               {:error, error} -> IO.puts(IO.ANSI.red() <> error.message <> IO.ANSI.reset())

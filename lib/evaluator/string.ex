@@ -9,7 +9,7 @@ defmodule Evaluator.String do
 
   defimpl String.Chars, for: Evaluator.String do
     def to_string(%Evaluator.String{} = string) do
-      string.value
+      "\"#{string.value}\""
     end
   end
 end

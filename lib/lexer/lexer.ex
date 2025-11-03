@@ -107,6 +107,8 @@ defmodule Lexer.Lexer do
 
           "," ->
             new_token(:comma, char, input)
+          ":" ->
+            new_token(:colon, char, input)
 
           ";" ->
             new_token(:semicolon, char, input)

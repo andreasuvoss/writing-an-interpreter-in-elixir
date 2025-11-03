@@ -69,6 +69,7 @@ type mismatch: INTEGER + BOOLEAN
 * Closures
 * Strings (incl. builtin function `len(s)`)
 * Arrays (incl. builtin functions `len(arr)`, `first(arr)`, `last(arr)`, `rest(arr)` and `push(arr, elem)`)
+* Hashes (maps)
 
 ## Run tests
 To run the tests the following command should be run. The `--no-start` flag makes sure only the tests run, if it's not

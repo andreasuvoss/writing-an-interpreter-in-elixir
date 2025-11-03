@@ -66,7 +66,6 @@ defmodule Evaluator do
   def eval(%Parser.Identifier{} = identifier, %Evaluator.Environment{} = environment) do
     case Evaluator.Environment.get(environment, identifier.value) do
         {:ok, val} -> {:ok, val, environment}
-        # {:error, error} -> {:error, create_error(error)}
         {:error, _} -> case get_builtin(identifier) do
           {:ok, val} -> {:ok, val, environment}
           {:error, error} ->{:error, create_error(error)}
@@ -88,6 +87,15 @@ defmodule Evaluator do
     end
   end
 
+  def eval(%Parser.HashLiteral{} = hash, %Evaluator.Environment{} = environment) do
+    {:ok, %Evaluator.Hash{pairs: Map.new(hash.pairs, fn {k, v} -> 
+      case eval(k, environment) do
+        {:ok, key, env} -> case eval(v, env) do
+          {:ok, value, _} -> {key, value}
+        end
+      end
+    end)}, environment}
+  end
 
   def eval(%Parser.FunctionLiteral{} = function, %Evaluator.Environment{} = environment) do
     {:ok, %Evaluator.Function{parameters: function.parameters, body: function.body, env: environment}, environment}
@@ -122,11 +130,30 @@ defmodule Evaluator do
             else
               {:ok, Enum.at(left.elements, idx), env}
             end
+          {%Evaluator.Hash{}, key} ->
+
+            case key do
+              %Evaluator.Integer{} -> handle_key(left, key, env)
+              %Evaluator.String{} -> handle_key(left, key, env)
+              %Evaluator.Boolean{} -> handle_key(left, key, env)
+              _ -> {:error, create_error("unsupported index type: #{Evaluator.Object.type(key)}")}
+            end
+            # case {:ok, left.pairs[key], env} do
+            #   {:ok, nil, env} -> {:ok, %Evaluator.Null{}, env}
+            #   {:ok, val, env} -> {:ok, val, env}
+            # end
         {:error, error} -> {:error, error}
         end
         {:error, error} -> {:error, error}
       end
       {:error, error} -> {:error, error}
+    end
+  end
+
+  defp handle_key(left, key, env) do
+    case {left.pairs[key], env} do
+      {nil, env} -> {:ok, %Evaluator.Null{}, env}
+      {val, env} -> {:ok, val, env}
     end
   end
 
@@ -185,6 +212,15 @@ defmodule Evaluator do
             obj -> {:error, create_error("argument to `rest` not supported, got #{Evaluator.Object.type(obj)} must be ARRAY")}
           end
         end
+      end}}
+      "puts" -> {:ok, %Evaluator.Builtin{fn: fn args -> 
+        Enum.each(args, fn x -> 
+          case x do
+            %Evaluator.String{} -> IO.puts(String.slice("#{x}", 1..-2//1))
+            _ -> IO.puts(x)
+          end
+        end)
+        {:ok, %Evaluator.Null{}}
       end}}
 
       _ -> {:error, "identifier not found: #{identifier.token.literal}"}
@@ -267,7 +303,7 @@ defmodule Evaluator do
   end
 
   defp eval_infix_expression("/", %Evaluator.Integer{} = left, %Evaluator.Integer{} = right, %Evaluator.Environment{} = environment) do
-    {:ok, %Evaluator.Integer{value: left.value / right.value}, environment}
+    {:ok, %Evaluator.Integer{value: trunc(left.value / right.value)}, environment}
   end
 
   defp eval_infix_expression(">", %Evaluator.Integer{} = left, %Evaluator.Integer{} = right, %Evaluator.Environment{} = environment) do

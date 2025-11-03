@@ -29,6 +29,7 @@ defmodule LexerTest do
     "foo bar";
     "foobar";
     ["test", 5];
+    {"name": "Jimmy", "age": 81, "alive": true, "band": "Led Zeppelin"};
     """
 
     tests = [
@@ -119,8 +120,28 @@ defmodule LexerTest do
       %Token{type: :int, literal: "5"},
       %Token{type: :rbracket, literal: "]"},
       %Token{type: :semicolon, literal: ";"},
+      %Token{type: :lbrace, literal: "{"},
+      %Token{type: :string, literal: "name"},
+      %Token{type: :colon, literal: ":"},
+      %Token{type: :string, literal: "Jimmy"},
+      %Token{type: :comma, literal: ","},
+      %Token{type: :string, literal: "age"},
+      %Token{type: :colon, literal: ":"},
+      %Token{type: :int, literal: "81"},
+      %Token{type: :comma, literal: ","},
+      %Token{type: :string, literal: "alive"},
+      %Token{type: :colon, literal: ":"},
+      %Token{type: :true, literal: "true"},
+      %Token{type: :comma, literal: ","},
+      %Token{type: :string, literal: "band"},
+      %Token{type: :colon, literal: ":"},
+      %Token{type: :string, literal: "Led Zeppelin"},
+      %Token{type: :rbrace, literal: "}"},
+      %Token{type: :semicolon, literal: ";"},
       %Token{type: :eof, literal: ""}
     ]
+
+    #    {"name": "Jimmy", "age": 81, "alive": true, "band": "Led Zeppelin"};
 
     assert Lexer.tokenize(input) == tests
   end

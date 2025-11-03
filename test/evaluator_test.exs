@@ -21,7 +21,7 @@ defmodule EvaluatorTest do
       %{input: "2 * (5 + 10)", expected: 30},
       %{input: "3 * 3 * 3 + 10", expected: 37},
       %{input: "3 * (3 * 3) + 10", expected: 37},
-      %{input: "(5 + 10 * 2 + 15 / 3) * 2 + -10", expected: 50},
+      %{input: "(5 + 10 * 2 + 15 / 3) * 2 + -10", expected: 50}
     ]
 
     tests
@@ -36,7 +36,6 @@ defmodule EvaluatorTest do
 
   @tag disabled: true
   test "evaluate boolean expression" do
-
     tests = [
       %{input: "true", expected: true},
       %{input: "false", expected: false},
@@ -60,7 +59,7 @@ defmodule EvaluatorTest do
       %{input: "\"test\" == \"test\"", expected: true},
       %{input: "\"test\" == \"test1\"", expected: false},
       %{input: "\"test\" != \"test\"", expected: false},
-      %{input: "\"test\" != \"test1\"", expected: true},
+      %{input: "\"test\" != \"test1\"", expected: true}
     ]
 
     tests
@@ -80,7 +79,7 @@ defmodule EvaluatorTest do
       %{input: "!5", expected: false},
       %{input: "!!true", expected: true},
       %{input: "!!false", expected: false},
-      %{input: "!!5", expected: true},
+      %{input: "!!5", expected: true}
     ]
 
     tests
@@ -101,7 +100,7 @@ defmodule EvaluatorTest do
       %{input: "if (1 < 2) { 10 }", expected: 10},
       %{input: "if (1 > 2) { 10 }", expected: nil},
       %{input: "if (1 > 2) { 10 } else { 20 }", expected: 20},
-      %{input: "if (1 < 2) { 10 } else { 20 }", expected: 10},
+      %{input: "if (1 < 2) { 10 } else { 20 }", expected: 10}
     ]
 
     tests
@@ -121,7 +120,7 @@ defmodule EvaluatorTest do
       %{input: "return 2 * 5; 9;", expected: 10},
       %{input: "9; return 2 * 5; 9", expected: 10},
       %{input: "if(10 > 1) { if(10 > 1) { return 10; } return 1; }", expected: 10},
-      %{input: "if (10 > 1) { if(10 > 1) { 10; 65; return 19; } 9 7 7; return 1 }", expected: 19},
+      %{input: "if (10 > 1) { if(10 > 1) { 10; 65; return 19; } 9 7 7; return 1 }", expected: 19}
     ]
 
     tests
@@ -141,10 +140,20 @@ defmodule EvaluatorTest do
       %{input: "-true", expected: "ERROR: unknown operator: -BOOLEAN"},
       %{input: "true + false", expected: "ERROR: unknown operator: BOOLEAN + BOOLEAN"},
       %{input: "5; true + false; 5", expected: "ERROR: unknown operator: BOOLEAN + BOOLEAN"},
-      %{input: "if(10 > 1){ true + false; }", expected: "ERROR: unknown operator: BOOLEAN + BOOLEAN"},
-      %{input: "if(10 > 1){if(10 > 1){ true + false; } return 1; }", expected: "ERROR: unknown operator: BOOLEAN + BOOLEAN"},
-      %{input: "if(10 > 1){if(10 > 1){ 1 + false; } return 1; }", expected: "ERROR: type mismatch: INTEGER + BOOLEAN"},
-      %{input: "foobar", expected: "ERROR: identifier not found: foobar"},
+      %{input: "{false:5}[fn(x){ x }]", expected: "ERROR: unsupported index type: FUNCTION"},
+      %{
+        input: "if(10 > 1){ true + false; }",
+        expected: "ERROR: unknown operator: BOOLEAN + BOOLEAN"
+      },
+      %{
+        input: "if(10 > 1){if(10 > 1){ true + false; } return 1; }",
+        expected: "ERROR: unknown operator: BOOLEAN + BOOLEAN"
+      },
+      %{
+        input: "if(10 > 1){if(10 > 1){ 1 + false; } return 1; }",
+        expected: "ERROR: type mismatch: INTEGER + BOOLEAN"
+      },
+      %{input: "foobar", expected: "ERROR: identifier not found: foobar"}
     ]
 
     tests
@@ -165,7 +174,7 @@ defmodule EvaluatorTest do
       %{input: "let a = 5; a;", expected: 5},
       %{input: "let a = 5 * 5; a;", expected: 25},
       %{input: "let a = 5; let b = a; b;", expected: 5},
-      %{input: "let a = 5; let b = a; let c = a + b + 5; c;", expected: 15},
+      %{input: "let a = 5; let b = a; let c = a + b + 5; c;", expected: 15}
     ]
 
     tests
@@ -181,7 +190,7 @@ defmodule EvaluatorTest do
   test "functions" do
     tests = [
       # %{input: "let a = 5; a;", expected: 0},
-      %{input: "fn(x) { x + 2 };", expected: 5},
+      %{input: "fn(x) { x + 2 };", expected: 5}
       # %{input: "let a = 5 * 5; a;", expected: 25},
       # %{input: "let a = 5; let b = a; b;", expected: 5},
       # %{input: "let a = 5; let b = a; let c = a + b + 5; c;", expected: 15},
@@ -195,7 +204,7 @@ defmodule EvaluatorTest do
       assert %Evaluator.Function{} = evaluated
     end)
   end
-  
+
   @tag disabled: true
   test "function application" do
     tests = [
@@ -204,7 +213,7 @@ defmodule EvaluatorTest do
       %{input: "let double = fn(x) { x * 2; }; double(5);", expected: 10},
       %{input: "let add = fn(x, y) { x + y; }; add(5, 5);", expected: 10},
       %{input: "let add = fn(x, y) { x + y; }; add(5 + 5, add(5, 5));", expected: 20},
-      %{input: "fn(x) {x;}(5)", expected: 5},
+      %{input: "fn(x) {x;}(5)", expected: 5}
     ]
 
     tests
@@ -219,85 +228,115 @@ defmodule EvaluatorTest do
   @tag disabled: true
   test "closures" do
     input = """
-      let newAdder = fn(x) {
-        fn(y) { x + y }
-      };
+    let newAdder = fn(x) {
+      fn(y) { x + y }
+    };
 
-      let addTwo = newAdder(2);
-      let addThree = newAdder(3);
-      addTwo(2);
-      """
+    let addTwo = newAdder(2);
+    let addThree = newAdder(3);
+    addTwo(2);
+    """
 
-      tokens = Lexer.Lexer.tokenize(input)
-      {:ok, program} = Parser.Parser.parse_program(tokens)
-      {:ok, evaluated, _} = Evaluator.eval(program, %Evaluator.Environment{})
+    tokens = Lexer.Lexer.tokenize(input)
+    {:ok, program} = Parser.Parser.parse_program(tokens)
+    {:ok, evaluated, _} = Evaluator.eval(program, %Evaluator.Environment{})
 
-      assert create_integer(4) == evaluated
+    assert create_integer(4) == evaluated
   end
 
   @tag disabled: true
   test "recursion" do
     input = """
-      let counter = fn(x, y) {
-        if (x > y) {
-          return true; 
-        }
-        else
-        {
-          counter(x+1, y)
-        }
-      };
+    let counter = fn(x, y) {
+      if (x > y) {
+        return true; 
+      }
+      else
+      {
+        counter(x+1, y)
+      }
+    };
 
-      counter(0, 100)
-      """
+    counter(0, 100)
+    """
 
-      tokens = Lexer.Lexer.tokenize(input)
-      {:ok, program} = Parser.Parser.parse_program(tokens)
-      {:ok, evaluated, _} = Evaluator.eval(program, %Evaluator.Environment{})
+    tokens = Lexer.Lexer.tokenize(input)
+    {:ok, program} = Parser.Parser.parse_program(tokens)
+    {:ok, evaluated, _} = Evaluator.eval(program, %Evaluator.Environment{})
 
-      assert create_boolean(true) == evaluated
+    assert create_boolean(true) == evaluated
+  end
+
+  @tag disabled: true
+  test "hashes" do
+    input = """
+    let two = "two";
+    {
+      "one": 10 - 9,
+      two: 1 + 1,
+      "thr" + "ee": 6 / 2,
+      4: 4,
+      true: 5,
+      false: 6
+    }
+    """
+
+    tokens = Lexer.Lexer.tokenize(input)
+    {:ok, program} = Parser.Parser.parse_program(tokens)
+    {:ok, evaluated, _} = Evaluator.eval(program, %Evaluator.Environment{})
+
+    assert %Evaluator.Hash{
+             pairs: %{
+               %Evaluator.String{value: "two"} => %Evaluator.Integer{value: 2},
+               %Evaluator.Integer{value: 4} => %Evaluator.Integer{value: 4},
+               %Evaluator.Boolean{value: false} => %Evaluator.Integer{value: 6},
+               %Evaluator.Boolean{value: true} => %Evaluator.Integer{value: 5},
+               %Evaluator.String{value: "one"} => %Evaluator.Integer{value: 1},
+               %Evaluator.String{value: "three"} => %Evaluator.Integer{value: 3},
+             }
+           } == evaluated
   end
 
   @tag disabled: true
   test "strings" do
     input = """
-      let text = "some text";
-      """
+    let text = "some text";
+    """
 
-      tokens = Lexer.Lexer.tokenize(input)
-      {:ok, program} = Parser.Parser.parse_program(tokens)
-      {:ok, evaluated, _} = Evaluator.eval(program, %Evaluator.Environment{})
+    tokens = Lexer.Lexer.tokenize(input)
+    {:ok, program} = Parser.Parser.parse_program(tokens)
+    {:ok, evaluated, _} = Evaluator.eval(program, %Evaluator.Environment{})
 
-      assert create_string("some text") == evaluated
+    assert create_string("some text") == evaluated
   end
 
   @tag disabled: true
   test "string concat" do
     input = """
-      "Hello" + " " + "World!"
-      """
+    "Hello" + " " + "World!"
+    """
 
-      tokens = Lexer.Lexer.tokenize(input)
-      {:ok, program} = Parser.Parser.parse_program(tokens)
-      {:ok, evaluated, _} = Evaluator.eval(program, %Evaluator.Environment{})
+    tokens = Lexer.Lexer.tokenize(input)
+    {:ok, program} = Parser.Parser.parse_program(tokens)
+    {:ok, evaluated, _} = Evaluator.eval(program, %Evaluator.Environment{})
 
-      assert create_string("Hello World!") == evaluated
+    assert create_string("Hello World!") == evaluated
   end
 
   @tag disabled: true
   test "array literals" do
     input = """
-      let myArray = [1,2,2 * 2,3 + 3]
-      """
+    let myArray = [1,2,2 * 2,3 + 3]
+    """
 
-      tokens = Lexer.Lexer.tokenize(input)
-      {:ok, program} = Parser.Parser.parse_program(tokens)
-      {:ok, evaluated, _} = Evaluator.eval(program, %Evaluator.Environment{})
+    tokens = Lexer.Lexer.tokenize(input)
+    {:ok, program} = Parser.Parser.parse_program(tokens)
+    {:ok, evaluated, _} = Evaluator.eval(program, %Evaluator.Environment{})
 
-      assert Enum.at(evaluated.elements, 0) == create_integer(1)
-      assert Enum.at(evaluated.elements, 1) == create_integer(2)
-      assert Enum.at(evaluated.elements, 2) == create_integer(4)
-      assert Enum.at(evaluated.elements, 3) == create_integer(6)
+    assert Enum.at(evaluated.elements, 0) == create_integer(1)
+    assert Enum.at(evaluated.elements, 1) == create_integer(2)
+    assert Enum.at(evaluated.elements, 2) == create_integer(4)
+    assert Enum.at(evaluated.elements, 3) == create_integer(6)
   end
 
   @tag disabled: true
@@ -320,12 +359,32 @@ defmodule EvaluatorTest do
     |> Enum.each(fn test ->
       tokens = Lexer.Lexer.tokenize(test.input)
       {:ok, program} = Parser.Parser.parse_program(tokens)
-      # IO.puts(program)
       {:ok, evaluated, _} = Evaluator.eval(program, %Evaluator.Environment{})
       assert create_integer(test.expected) == evaluated
     end)
   end
 
+  @tag disabled: true
+  test "hash indicies" do
+    tests = [
+      %{input: "{88: 1}[88]", expected: create_integer(1)},
+      %{input: "{\"foo\": 5}[\"foo\"]", expected: create_integer(5)},
+      %{input: "{\"foo\": 5}[\"bar\"]", expected: create_nil()},
+      %{input: "let key = \"foo\"; {\"foo\": 5}[key]", expected: create_integer(5)},
+      %{input: "{}[\"foo\"]", expected: create_nil()},
+      %{input: "{5:5}[5]", expected: create_integer(5)},
+      %{input: "{true:5}[true]", expected: create_integer(5)},
+      %{input: "{false:5}[false]", expected: create_integer(5)},
+    ]
+
+    tests
+    |> Enum.each(fn test ->
+      tokens = Lexer.Lexer.tokenize(test.input)
+      {:ok, program} = Parser.Parser.parse_program(tokens)
+      {:ok, evaluated, _} = Evaluator.eval(program, %Evaluator.Environment{})
+      assert test.expected == evaluated
+    end)
+  end
 
   @tag disabled: true
   test "builtin functions" do
@@ -339,10 +398,35 @@ defmodule EvaluatorTest do
       %{input: "let x = [1,2]; first(x)", expected: create_integer(1)},
       %{input: "let x = [1,2]; last(x)", expected: create_integer(2)},
       %{input: "let x = [1,2]; rest(x)", expected: create_array([create_integer(2)])},
-      %{input: "let x = [1,2,4]; rest(x)", expected: create_array([create_integer(2), create_integer(4)])},
-      %{input: "let a = [1,2,3,4]; rest(rest(a))", expected: create_array([create_integer(3), create_integer(4)])},
-      %{input: "let a = [1,2,3,4]; let b = push(a, 5); b", expected: create_array([create_integer(1), create_integer(2), create_integer(3), create_integer(4), create_integer(5)])},
-      %{input: "let a = [1,2,3,4]; let b = push(a, 5); a", expected: create_array([create_integer(1), create_integer(2), create_integer(3), create_integer(4)])},
+      %{
+        input: "let x = [1,2,4]; rest(x)",
+        expected: create_array([create_integer(2), create_integer(4)])
+      },
+      %{
+        input: "let a = [1,2,3,4]; rest(rest(a))",
+        expected: create_array([create_integer(3), create_integer(4)])
+      },
+      %{
+        input: "let a = [1,2,3,4]; let b = push(a, 5); b",
+        expected:
+          create_array([
+            create_integer(1),
+            create_integer(2),
+            create_integer(3),
+            create_integer(4),
+            create_integer(5)
+          ])
+      },
+      %{
+        input: "let a = [1,2,3,4]; let b = push(a, 5); a",
+        expected:
+          create_array([
+            create_integer(1),
+            create_integer(2),
+            create_integer(3),
+            create_integer(4)
+          ])
+      }
     ]
 
     tests
@@ -357,8 +441,14 @@ defmodule EvaluatorTest do
   @tag disabled: true
   test "builtin errors" do
     tests = [
-      %{input: "len(1)", expected: %Evaluator.Error{message: "ERROR: argument to `len` not supported, got INTEGER"}},
-      %{input: "len(\"one\", \"two\")", expected: %Evaluator.Error{message: "ERROR: wrong number of arguments got 2 want 1"}},
+      %{
+        input: "len(1)",
+        expected: %Evaluator.Error{message: "ERROR: argument to `len` not supported, got INTEGER"}
+      },
+      %{
+        input: "len(\"one\", \"two\")",
+        expected: %Evaluator.Error{message: "ERROR: wrong number of arguments got 2 want 1"}
+      }
     ]
 
     tests
@@ -373,15 +463,23 @@ defmodule EvaluatorTest do
   defp create_boolean(value) do
     %Evaluator.Boolean{value: value}
   end
+
+  defp create_nil() do
+    %Evaluator.Null{}
+  end
+
   defp create_integer(nil) do
     %Evaluator.Null{}
   end
+
   defp create_integer(value) do
     %Evaluator.Integer{value: value}
   end
+
   defp create_string(value) do
     %Evaluator.String{value: value}
   end
+
   defp create_array(elements) do
     %Evaluator.Array{elements: elements}
   end

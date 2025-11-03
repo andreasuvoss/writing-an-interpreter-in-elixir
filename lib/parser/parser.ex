@@ -1,4 +1,5 @@
 defmodule Parser.Parser do
+  alias ElixirLS.LanguageServer.Providers.FoldingRange.Token
   alias Parser.IndexExpression
   alias Parser.CallExpression
   alias Parser.FunctionLiteral
@@ -271,6 +272,20 @@ defmodule Parser.Parser do
     end
   end
 
+  defp parse_hash_literal([token | tail] = tokens, hash \\ %{}) do
+    case token.type do
+      :rbrace -> {:ok, %Parser.HashLiteral{pairs: hash}, tail}
+      :eof -> {:ok, %Parser.HashLiteral{pairs: hash}, []}
+      _ -> 
+        {:ok, key, [%Token{type: :colon} | tail]} = parse_expression(tokens, :lowest)
+        case parse_expression(tail, :lowest) do
+         {:ok, value, [%Token{type: :comma} | tail]} -> parse_hash_literal(tail, Map.put(hash, key, value))
+         {:ok, value, [%Token{type: :rbrace} = head | tail]} -> parse_hash_literal([head | tail], Map.put(hash, key, value))
+         {:error, _, tail} -> {:error, ["unable to parse hash literal"], tail}
+        end
+    end
+  end
+
   defp parse_prefix([%Token{type: :bang} | _] = tokens), do: parse_prefix_expression(tokens)
   defp parse_prefix([%Token{type: :minus} | _] = tokens), do: parse_prefix_expression(tokens)
   defp parse_prefix([%Token{type: :lparen} | _] = tokens), do: parse_grouped_expression(tokens)
@@ -282,7 +297,9 @@ defmodule Parser.Parser do
   defp parse_prefix([%Token{type: :lbracket} | tail]), do: parse_array_literal(tail)
   defp parse_prefix([%Token{type: :function} | tail]), do: parse_function_literal(tail)
   defp parse_prefix([%Token{type: :string} | _] = tokens), do: parse_string_literal(tokens)
-  defp parse_prefix([%Token{type: :lbrace} | tail]), do: {:error, ["found '{' without a function or if expression to start"], tail}
+  defp parse_prefix([%Token{type: :lbrace} | tail]), do: parse_hash_literal(tail)
+  # defp parse_prefix([%Token{type: :lbrace} | tail]), do: {:error, ["found '{' without a function or if expression to start"], tail}
+  # defp parse_prefix([%Token{type: :eof}]), do: {:ok, nil, []}
   defp parse_prefix([%Token{type: :rbrace} | tail]), do: {:error, ["found '}' without a block to close"], tail}
   defp parse_prefix([%Token{type: :else} | tail]), do: {:error, ["found else keyword with no prior if block"], tail}
   defp parse_prefix([%Token{type: :assign} | tail]), do: {:error, ["assignment '=' without let statement is not allowed"], tail}
