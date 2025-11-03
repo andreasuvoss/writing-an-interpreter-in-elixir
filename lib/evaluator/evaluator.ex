@@ -105,6 +105,7 @@ defmodule Evaluator do
     case eval(call_expression.function, environment) do
       {:ok, function, env} -> case eval_expressions(call_expression.arguments, env) do
         {:ok, args, env} -> apply_function(function, args, env)
+        {:error, error} -> {:error, error}
       end
       {:error, error} -> {:error, error}
     end
@@ -138,10 +139,6 @@ defmodule Evaluator do
               %Evaluator.Boolean{} -> handle_key(left, key, env)
               _ -> {:error, create_error("unsupported index type: #{Evaluator.Object.type(key)}")}
             end
-            # case {:ok, left.pairs[key], env} do
-            #   {:ok, nil, env} -> {:ok, %Evaluator.Null{}, env}
-            #   {:ok, val, env} -> {:ok, val, env}
-            # end
         {:error, error} -> {:error, error}
         end
         {:error, error} -> {:error, error}
