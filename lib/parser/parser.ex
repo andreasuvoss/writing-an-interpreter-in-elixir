@@ -206,6 +206,21 @@ defmodule Parser.Parser do
     end
   end
 
+  defp parse_macro_literal([token | rest]) do
+    if token.type != :lparen do
+      {:error, ["expected '(' to start function literal got '#{token.literal}'"], rest}
+    else
+      case parse_function_parameters(rest) do
+       {:ok, params, rest} -> 
+          case parse_block_statement(rest) do
+          {:ok, statements, rest} -> {:ok, %Parser.MacroLiteral{parameters: params, body: statements}, rest}
+          {:error, errors, rest} -> {:error, errors, rest}
+       end
+      {:error, errors, rest} -> {:error, errors, rest}
+      end
+    end
+  end
+
   defp parse_function_literal([token | rest]) do
     if token.type != :lparen do
       {:error, ["expected '(' to start function literal got '#{token.literal}'"], rest}
@@ -296,10 +311,9 @@ defmodule Parser.Parser do
   defp parse_prefix([%Token{type: :if} | _] = tokens), do: parse_if_expression(tokens)
   defp parse_prefix([%Token{type: :lbracket} | tail]), do: parse_array_literal(tail)
   defp parse_prefix([%Token{type: :function} | tail]), do: parse_function_literal(tail)
+  defp parse_prefix([%Token{type: :macro} | tail]), do: parse_macro_literal(tail)
   defp parse_prefix([%Token{type: :string} | _] = tokens), do: parse_string_literal(tokens)
   defp parse_prefix([%Token{type: :lbrace} | tail]), do: parse_hash_literal(tail)
-  # defp parse_prefix([%Token{type: :lbrace} | tail]), do: {:error, ["found '{' without a function or if expression to start"], tail}
-  # defp parse_prefix([%Token{type: :eof}]), do: {:ok, nil, []}
   defp parse_prefix([%Token{type: :rbrace} | tail]), do: {:error, ["found '}' without a block to close"], tail}
   defp parse_prefix([%Token{type: :else} | tail]), do: {:error, ["found else keyword with no prior if block"], tail}
   defp parse_prefix([%Token{type: :assign} | tail]), do: {:error, ["assignment '=' without let statement is not allowed"], tail}

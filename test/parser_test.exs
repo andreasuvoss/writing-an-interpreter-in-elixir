@@ -1,4 +1,5 @@
 defmodule ParserTest do
+  alias Parser.BlockStatement
   alias Parser.ArrayLiteral
   alias Parser.ExpressionStatement
   alias Parser.Boolean
@@ -646,7 +647,10 @@ defmodule ParserTest do
             index: %Parser.IntegerLiteral{token: %Token{type: :int, literal: "0"}, value: 0},
             left: %Parser.HashLiteral{
               token: %Token{type: :rbracket, literal: "{"},
-              pairs: %{%IntegerLiteral{value: 123, token: %Token{type: :int, literal: "123"}} => %Boolean{value: true}}
+              pairs: %{
+                %IntegerLiteral{value: 123, token: %Token{type: :int, literal: "123"}} =>
+                  %Boolean{value: true}
+              }
             },
             token: %Token{literal: "[", type: :lbracket}
           },
@@ -747,6 +751,175 @@ defmodule ParserTest do
       _statement = program.statements |> Enum.at(0)
       assert _statement = test.expected
     end)
+  end
+
+  @tag disabled: true
+  test "modify" do
+    one = fn -> %ExpressionStatement{expression: %IntegerLiteral{value: 1}} end
+    two = fn -> %ExpressionStatement{expression: %IntegerLiteral{value: 2}} end
+
+    turn_one_into_two = fn %IntegerLiteral{} = node ->
+      if node.value != 1 do
+        node
+      else
+        %{node | value: 2}
+      end
+    end
+
+    tests = [
+      %{
+        input: one.(),
+        expected: two.()
+      },
+      %{
+        input: %Parser.Program{
+          statements: [
+            %ExpressionStatement{expression: one.()}
+          ]
+        },
+        expected: %Parser.Program{
+          statements: [
+            %ExpressionStatement{expression: two.()}
+          ]
+        }
+      },
+      %{
+        input: %Parser.InfixExpression{left: one.(), operator: "+", right: two.()},
+        expected: %Parser.InfixExpression{left: two.(), operator: "+", right: two.()}
+      },
+      %{
+        input: %Parser.InfixExpression{left: two.(), operator: "+", right: one.()},
+        expected: %Parser.InfixExpression{left: two.(), operator: "+", right: two.()}
+      },
+      %{
+        input: %Parser.PrefixExpression{operator: "-", right: one.()},
+        expected: %Parser.PrefixExpression{operator: "-", right: two.()}
+      },
+      %{
+        input: %Parser.IndexExpression{left: one.(), index: one.()},
+        expected: %Parser.IndexExpression{left: two.(), index: two.()}
+      },
+      %{
+        input: %Parser.IfExpression{
+          condition: one.(),
+          consequence: %Parser.BlockStatement{
+            statements: [
+              %ExpressionStatement{expression: one.()}
+            ]
+          },
+          alternative: %Parser.BlockStatement{
+            statements: [
+              %ExpressionStatement{expression: one.()}
+            ]
+          }
+        },
+        expected: %Parser.IfExpression{
+          condition: two.(),
+          consequence: %Parser.BlockStatement{
+            statements: [
+              %ExpressionStatement{expression: two.()}
+            ]
+          },
+          alternative: %Parser.BlockStatement{
+            statements: [
+              %ExpressionStatement{expression: two.()}
+            ]
+          }
+        }
+      },
+      %{
+        input: %Parser.ReturnStatement{return_value: one.()},
+        expected: %Parser.ReturnStatement{return_value: two.()}
+      },
+      %{
+        input: %Parser.LetStatement{value: one.()},
+        expected: %Parser.LetStatement{value: two.()}
+      },
+      %{
+        input: %Parser.FunctionLiteral{
+          parameters: [],
+          body: %BlockStatement{
+            statements: [
+              %ExpressionStatement{expression: one.()}
+            ]
+          }
+        },
+        expected: %Parser.FunctionLiteral{
+          parameters: [],
+          body: %BlockStatement{
+            statements: [
+              %ExpressionStatement{expression: two.()}
+            ]
+          }
+        }
+      },
+      %{
+        input: %Parser.ArrayLiteral{elements: [one.()]},
+        expected: %Parser.ArrayLiteral{elements: [two.()]}
+      },
+      %{
+        input: %Parser.HashLiteral{
+          pairs: %{
+            one.() => one.(),
+            one.() => one.()
+          }
+        },
+        expected: %Parser.HashLiteral{
+          pairs: %{
+            two.() => two.(),
+            two.() => two.()
+          }
+        }
+      }
+    ]
+
+    tests
+    |> Enum.each(fn test ->
+      modified = Parser.Modify.modify(test.input, turn_one_into_two)
+      assert modified == test.expected
+    end)
+  end
+
+  @tag disabled: true
+  test "macro literal" do
+    input = "macro(x , y) { x + y; }"
+    tokens = Lexer.tokenize(input)
+    {:ok, program} = Parser.Parser.parse_program(tokens)
+
+    statement = Enum.at(program.statements, 0)
+
+    assert length(program.statements) == 1
+
+    assert statement == %Parser.ExpressionStatement{
+             expression: %Parser.MacroLiteral{
+               body: %Parser.BlockStatement{
+                 token: %Token{type: :lbrace, literal: "{"},
+                 statements: [
+                   %Parser.ExpressionStatement{
+                     token: %Token{type: :expression, literal: nil},
+                     expression: %Parser.InfixExpression{
+                       token: %Token{type: :plus, literal: "+"},
+                       left: %Parser.Identifier{
+                         token: %Token{type: :ident, literal: "x"},
+                         value: "x"
+                       },
+                       operator: "+",
+                       right: %Parser.Identifier{
+                         token: %Token{type: :ident, literal: "y"},
+                         value: "y"
+                       }
+                     }
+                   }
+                 ]
+               },
+               token: %Token{type: :macro, literal: "macro"},
+               parameters: [
+                 %Parser.Identifier{token: %Token{type: :ident, literal: "x"}, value: "x"},
+                 %Parser.Identifier{token: %Token{type: :ident, literal: "y"}, value: "y"}
+               ]
+             },
+             token: %Token{literal: nil, type: :expression}
+           }
   end
 
   test "does it parse" do

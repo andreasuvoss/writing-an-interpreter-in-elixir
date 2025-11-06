@@ -30,6 +30,7 @@ defmodule LexerTest do
     "foobar";
     ["test", 5];
     {"name": "Jimmy", "age": 81, "alive": true, "band": "Led Zeppelin"};
+    macro(x, y) { x + y; };
     """
 
     tests = [
@@ -136,6 +137,19 @@ defmodule LexerTest do
       %Token{type: :string, literal: "band"},
       %Token{type: :colon, literal: ":"},
       %Token{type: :string, literal: "Led Zeppelin"},
+      %Token{type: :rbrace, literal: "}"},
+      %Token{type: :semicolon, literal: ";"},
+      %Token{type: :macro, literal: "macro"},
+      %Token{type: :lparen, literal: "("},
+      %Token{type: :ident, literal: "x"},
+      %Token{type: :comma, literal: ","},
+      %Token{type: :ident, literal: "y"},
+      %Token{type: :rparen, literal: ")"},
+      %Token{type: :lbrace, literal: "{"},
+      %Token{type: :ident, literal: "x"},
+      %Token{type: :plus, literal: "+"},
+      %Token{type: :ident, literal: "y"},
+      %Token{type: :semicolon, literal: ";"},
       %Token{type: :rbrace, literal: "}"},
       %Token{type: :semicolon, literal: ";"},
       %Token{type: :eof, literal: ""}

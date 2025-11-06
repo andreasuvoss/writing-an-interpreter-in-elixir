@@ -36,6 +36,7 @@ defmodule Lexer.Token do
       "else" -> %Lexer.Token{type: :else, literal: identifier}
       "true" -> %Lexer.Token{type: :true, literal: identifier}
       "false" -> %Lexer.Token{type: :false, literal: identifier}
+      "macro" -> %Lexer.Token{type: :macro, literal: identifier}
       _ -> %Lexer.Token{type: :ident, literal: identifier}
     end
   end

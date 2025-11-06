@@ -292,7 +292,7 @@ defmodule EvaluatorTest do
                %Evaluator.Boolean{value: false} => %Evaluator.Integer{value: 6},
                %Evaluator.Boolean{value: true} => %Evaluator.Integer{value: 5},
                %Evaluator.String{value: "one"} => %Evaluator.Integer{value: 1},
-               %Evaluator.String{value: "three"} => %Evaluator.Integer{value: 3},
+               %Evaluator.String{value: "three"} => %Evaluator.Integer{value: 3}
              }
            } == evaluated
   end
@@ -374,7 +374,7 @@ defmodule EvaluatorTest do
       %{input: "{}[\"foo\"]", expected: create_nil()},
       %{input: "{5:5}[5]", expected: create_integer(5)},
       %{input: "{true:5}[true]", expected: create_integer(5)},
-      %{input: "{false:5}[false]", expected: create_integer(5)},
+      %{input: "{false:5}[false]", expected: create_integer(5)}
     ]
 
     tests
@@ -383,6 +383,130 @@ defmodule EvaluatorTest do
       {:ok, program} = Parser.Parser.parse_program(tokens)
       {:ok, evaluated, _} = Evaluator.eval(program, %Evaluator.Environment{})
       assert test.expected == evaluated
+    end)
+  end
+
+  @tag disabled: true
+  test "quote" do
+    tests = [
+      %{input: "quote(5)", expected: "5"},
+      %{input: "quote(5 + 8)", expected: "(5 + 8)"},
+      %{input: "quote(foobar)", expected: "foobar"},
+      %{input: "quote(foobar + barfoo)", expected: "(foobar + barfoo)"}
+    ]
+
+    tests
+    |> Enum.each(fn test ->
+      tokens = Lexer.Lexer.tokenize(test.input)
+      {:ok, program} = Parser.Parser.parse_program(tokens)
+      {:ok, evaluated, _} = Evaluator.eval(program, %Evaluator.Environment{})
+      assert test.expected == "#{evaluated.node}"
+    end)
+  end
+
+  @tag disabled: true
+  test "unquote" do
+    tests = [
+      %{input: "quote(unquote(4))", expected: "4"},
+      %{input: "quote(unquote(4 + 4))", expected: "8"},
+      %{input: "quote(8 + unquote(4 + 4))", expected: "(8 + 8)"},
+      %{input: "quote(unquote(4 + 4) + 8)", expected: "(8 + 8)"},
+      %{input: "let foobar = 8; quote(foobar)", expected: "foobar"},
+      %{input: "let foobar = 8; quote(unquote(foobar))", expected: "8"},
+      %{input: "quote(unquote(true))", expected: "true"},
+      %{input: "quote(unquote(true == false))", expected: "false"},
+      %{input: "quote(unquote(quote(4 + 4)))", expected: "(4 + 4)"},
+      %{
+        input:
+          "let quotedInfixExpression = quote(4 + 4); quote(unquote(4 + 4) + unquote(quotedInfixExpression))",
+        expected: "(8 + (4 + 4))"
+      }
+    ]
+
+    tests
+    |> Enum.each(fn test ->
+      tokens = Lexer.Lexer.tokenize(test.input)
+      {:ok, program} = Parser.Parser.parse_program(tokens)
+      {:ok, evaluated, _} = Evaluator.eval(program, %Evaluator.Environment{})
+      assert test.expected == "#{evaluated.node}"
+    end)
+  end
+
+  @tag disabled: true
+  test "define macros" do
+    input = """
+    let number = 1; 
+    let function = fn(x, y) { x + y }; 
+    let mymacro = macro(x, y) { x + y; };
+    """
+
+    tokens = Lexer.Lexer.tokenize(input)
+    {:ok, program} = Parser.Parser.parse_program(tokens)
+    {:ok, program, env} = Evaluator.define_macros(program, %Evaluator.Environment{})
+
+    assert length(program.statements) == 2
+    assert length(Map.keys(env.store)) == 1
+
+    assert Evaluator.Environment.get(env, "mymacro") ==
+             {:ok,
+              %Evaluator.Macro{
+                body: %Parser.BlockStatement{
+                  token: %Lexer.Token{type: :lbrace, literal: "{"},
+                  statements: [
+                    %Parser.ExpressionStatement{
+                      token: %Lexer.Token{type: :expression, literal: nil},
+                      expression: %Parser.InfixExpression{
+                        token: %Lexer.Token{type: :plus, literal: "+"},
+                        left: %Parser.Identifier{
+                          token: %Lexer.Token{type: :ident, literal: "x"},
+                          value: "x"
+                        },
+                        operator: "+",
+                        right: %Parser.Identifier{
+                          token: %Lexer.Token{type: :ident, literal: "y"},
+                          value: "y"
+                        }
+                      }
+                    }
+                  ]
+                },
+                env: %Evaluator.Environment{store: %{}, outer: nil},
+                parameters: [
+                  %Parser.Identifier{token: %Lexer.Token{type: :ident, literal: "x"}, value: "x"},
+                  %Parser.Identifier{token: %Lexer.Token{type: :ident, literal: "y"}, value: "y"}
+                ]
+              }}
+  end
+
+  @tag disabled: true
+  test "macro expansion" do
+    tests = [
+      %{input: "let infix = macro() { quote(1+2) }; infix();", expected: "(1 + 2)"},
+      %{input: "let rev = macro(a,b) { quote(unquote(b) - unquote(a));}; rev(2 + 2, 10 - 5)", expected: "(10 - 5) - (2 + 2)"},
+      %{input: """
+            let unless = macro(condition, consequence, alternative) {
+                quote(if (!(unquote(condition))) {
+                    unquote(consequence);
+                } else {
+                    unquote(alternative);
+                });
+            };
+
+            unless(10 > 5, puts("not greater"), puts("greater"));
+        """, expected: "if (!(10 > 5)) { puts(\"not greater\") } else { puts(\"greater\") }"},
+    ]
+    tests
+    |> Enum.each(fn test ->
+      tokens = Lexer.Lexer.tokenize(test.input)
+      expected = test_parse_program(test.expected)
+      program = test_parse_program(test.input)
+      {:ok, program, env} = Evaluator.define_macros(program, %Evaluator.Environment{})
+
+      expanded = Evaluator.expand_macros(program, env)
+      # IO.inspect(expanded)
+      # IO.inspect(expected)
+      # {:ok, expanded, _} = Evaluator.expand_macros(program, env)
+      assert "#{expected}" == "#{expanded}"
     end)
   end
 
@@ -482,5 +606,11 @@ defmodule EvaluatorTest do
 
   defp create_array(elements) do
     %Evaluator.Array{elements: elements}
+  end
+
+  defp test_parse_program(input) do
+      tokens = Lexer.Lexer.tokenize(input)
+      {:ok, program} = Parser.Parser.parse_program(tokens)
+      program
   end
 end

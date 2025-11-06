@@ -1,4 +1,66 @@
 defmodule Evaluator do
+alias Parser.MacroLiteral
+
+  def define_macros(%Parser.Program{} = program, %Evaluator.Environment{} = environment) do
+    macros = Enum.reject(program.statements, fn s -> 
+      case s do
+        %Parser.LetStatement{value: %Parser.MacroLiteral{}} -> false 
+        _ -> true
+      end
+    end)
+    statements = Enum.reject(program.statements, fn s -> 
+      case s do
+        %Parser.LetStatement{value: %Parser.MacroLiteral{}} -> true
+        _ -> false
+      end
+    end)
+
+    env = add_macros(macros, environment)
+
+    {:ok, %{program | statements: statements}, env}
+  end
+
+  defp add_macros([%Parser.LetStatement{} = macro | tail], %Evaluator.Environment{} = environment) do
+    environment = add_macro(macro, environment)
+    add_macros(tail, environment)
+  end
+
+  defp add_macros([], env), do: env
+
+  defp add_macro(%Parser.LetStatement{value: %Parser.MacroLiteral{} = macro_literal} = stmt, %Evaluator.Environment{} = environment) do
+    Evaluator.Environment.set(environment, stmt.name.value, %Evaluator.Macro{parameters: macro_literal.parameters, env: environment, body: macro_literal.body})
+  end
+
+  def expand_macros(%Parser.Program{} = program, %Evaluator.Environment{} = environment) do
+    Parser.Modify.modify(program, fn node -> 
+      case node do
+        %Parser.CallExpression{function: %Parser.Identifier{} = ident} = call_exp -> case Evaluator.Environment.get(environment, ident.value) do
+          {:ok, %Evaluator.Macro{} = macro} -> 
+            args = quote_args(call_exp.arguments)
+            eval_env = extend_macro_env(macro, args)
+            case eval(macro.body, eval_env) do
+              {:ok, quote, env} -> quote.node
+              {:error, error} -> {:error, error}
+            end
+        end
+        _ -> node
+      end
+    end)
+  end
+
+  defp quote_args(args) do
+    Enum.map(args, fn a -> %Evaluator.Quote{node: a} end)
+  end
+
+  defp extend_macro_env(macro, args) do
+    internal_store = 
+      macro.parameters
+      |> Enum.with_index(0) 
+      |> Enum.map(fn {param, index} -> {param.value, Enum.at(args, index)} end) 
+      |> Map.new()
+
+    %Evaluator.Environment{store: internal_store, outer: nil}
+  end
 
   def eval(%Parser.Program{} = program, %Evaluator.Environment{} = environment) do
     case eval_program(program.statements, environment) do
@@ -102,12 +164,53 @@ defmodule Evaluator do
   end
 
   def eval(%Parser.CallExpression{} = call_expression, %Evaluator.Environment{} = environment) do
-    case eval(call_expression.function, environment) do
+    case call_expression.function.token.literal do
+      "quote" -> case length(call_expression.arguments) do 
+        1 -> {:ok, quote_node(Enum.at(call_expression.arguments, 0), environment), environment}
+        arg_length -> {:error, create_error("quote only accepts 1 argument got #{arg_length}")}
+      end
+      _ -> case eval(call_expression.function, environment) do
       {:ok, function, env} -> case eval_expressions(call_expression.arguments, env) do
         {:ok, args, env} -> apply_function(function, args, env)
         {:error, error} -> {:error, error}
       end
       {:error, error} -> {:error, error}
+    end
+    end
+    
+  end
+
+  defp quote_node(node, environment) do
+    node = eval_unquote_calls(node, environment)
+    case eval_unquote_calls(node, environment) do
+      node -> %Evaluator.Quote{node: node}
+      # {:ok, node, _} -> IO.inspect(node)
+      #   %Evaluator.Quote{node: node}
+      # {:error, error} -> {:error, error}
+    end
+  end
+
+  defp eval_unquote_calls(node, environment) do
+    Parser.Modify.modify(node, fn n -> 
+      case n do
+        %Parser.CallExpression{function: %Parser.Identifier{token: %Lexer.Token{literal: "unquote"}}} -> 
+          # IO.puts("hello!")
+          case eval(Enum.at(n.arguments, 0), environment) do
+            {:ok, ret, _} -> convert_to_ast_node(ret)
+          end
+        _ -> 
+          # IO.puts("hshe")
+          n
+      end
+    end)
+  end
+
+  defp convert_to_ast_node(object) do
+    case object do
+      %Evaluator.Integer{} = int -> %Parser.IntegerLiteral{token: %Lexer.Token{type: :int, literal: "#{int}"}, value: int.value}
+      %Evaluator.Boolean{value: true} -> %Parser.Boolean{token: %Lexer.Token{type: :true, literal: "true"}, value: true}
+      %Evaluator.Boolean{value: false} -> %Parser.Boolean{token: %Lexer.Token{type: :false, literal: "false"}, value: false}
+      %Evaluator.Quote{} -> object.node
     end
   end
 
@@ -371,6 +474,10 @@ defmodule Evaluator do
       {:ok, value, env} -> {:ok, value, env}
       {:error, error} -> {:error, error}
     end
+  end
+
+  defp eval_program([], %Evaluator.Environment{} = environment) do
+      {:ok, nil, environment}
   end
 
   defp eval_program([statement | tail], %Evaluator.Environment{} = environment) do
