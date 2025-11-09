@@ -1,5 +1,4 @@
 defmodule Evaluator do
-alias Parser.MacroLiteral
 
   def define_macros(%Parser.Program{} = program, %Evaluator.Environment{} = environment) do
     macros = Enum.reject(program.statements, fn s -> 
@@ -32,20 +31,24 @@ alias Parser.MacroLiteral
   end
 
   def expand_macros(%Parser.Program{} = program, %Evaluator.Environment{} = environment) do
-    Parser.Modify.modify(program, fn node -> 
-      case node do
-        %Parser.CallExpression{function: %Parser.Identifier{} = ident} = call_exp -> case Evaluator.Environment.get(environment, ident.value) do
-          {:ok, %Evaluator.Macro{} = macro} -> 
-            args = quote_args(call_exp.arguments)
-            eval_env = extend_macro_env(macro, args)
-            case eval(macro.body, eval_env) do
-              {:ok, quote, env} -> quote.node
-              {:error, error} -> {:error, error}
-            end
-        end
-        _ -> node
-      end
-    end)
+    case Parser.Modify.modify(program, &macro_expansion_modifier(&1, environment)) do
+      {:ok, %Parser.Program{} = prog} -> {:ok, prog}
+      {:error, error} -> {:error, create_error(error)}
+    end
+  end
+
+  defp macro_expansion_modifier(node, environment) do
+    with %Parser.CallExpression{function: %Parser.Identifier{} = ident} = call_exp <- node,
+         {:ok, %Evaluator.Macro{} = macro} <- Evaluator.Environment.get(environment, ident.value),
+         args = quote_args(call_exp.arguments),
+         eval_env = extend_macro_env(macro, args),
+         {:ok, quoted, _env} <- eval(macro.body, eval_env)
+      do
+        {:ok, quoted.node}
+    else
+      ^node -> {:ok, node}
+      {:error, error} -> {:error, error}
+    end
   end
 
   defp quote_args(args) do
@@ -60,6 +63,35 @@ alias Parser.MacroLiteral
       |> Map.new()
 
     %Evaluator.Environment{store: internal_store, outer: nil}
+  end
+
+  defp quote_node(node, environment) do
+    case eval_unquote_calls(node, environment) do
+      {:ok, node} -> {:ok, %Evaluator.Quote{node: node}}
+    end
+  end
+
+  defp eval_unquote_calls(node, environment) do
+    Parser.Modify.modify(node, fn n -> 
+      case n do
+        %Parser.CallExpression{function: %Parser.Identifier{token: %Lexer.Token{literal: "unquote"}}} -> 
+          case eval(Enum.at(n.arguments, 0), environment) do
+            {:ok, ret, _} -> {:ok, convert_to_ast_node(ret)}
+            _ -> {:error, "test"}
+          end
+        _ -> 
+          {:ok, n}
+      end
+    end)
+  end
+
+  defp convert_to_ast_node(object) do
+    case object do
+      %Evaluator.Integer{} = int -> %Parser.IntegerLiteral{token: %Lexer.Token{type: :int, literal: "#{int}"}, value: int.value}
+      %Evaluator.Boolean{value: true} -> %Parser.Boolean{token: %Lexer.Token{type: :true, literal: "true"}, value: true}
+      %Evaluator.Boolean{value: false} -> %Parser.Boolean{token: %Lexer.Token{type: :false, literal: "false"}, value: false}
+      %Evaluator.Quote{} -> object.node
+    end
   end
 
   def eval(%Parser.Program{} = program, %Evaluator.Environment{} = environment) do
@@ -166,7 +198,10 @@ alias Parser.MacroLiteral
   def eval(%Parser.CallExpression{} = call_expression, %Evaluator.Environment{} = environment) do
     case call_expression.function.token.literal do
       "quote" -> case length(call_expression.arguments) do 
-        1 -> {:ok, quote_node(Enum.at(call_expression.arguments, 0), environment), environment}
+        1 -> case quote_node(Enum.at(call_expression.arguments, 0), environment) do
+          {:ok, node} -> {:ok, node, environment}
+          {:error, _} = err -> err
+        end
         arg_length -> {:error, create_error("quote only accepts 1 argument got #{arg_length}")}
       end
       _ -> case eval(call_expression.function, environment) do
@@ -180,39 +215,6 @@ alias Parser.MacroLiteral
     
   end
 
-  defp quote_node(node, environment) do
-    node = eval_unquote_calls(node, environment)
-    case eval_unquote_calls(node, environment) do
-      node -> %Evaluator.Quote{node: node}
-      # {:ok, node, _} -> IO.inspect(node)
-      #   %Evaluator.Quote{node: node}
-      # {:error, error} -> {:error, error}
-    end
-  end
-
-  defp eval_unquote_calls(node, environment) do
-    Parser.Modify.modify(node, fn n -> 
-      case n do
-        %Parser.CallExpression{function: %Parser.Identifier{token: %Lexer.Token{literal: "unquote"}}} -> 
-          # IO.puts("hello!")
-          case eval(Enum.at(n.arguments, 0), environment) do
-            {:ok, ret, _} -> convert_to_ast_node(ret)
-          end
-        _ -> 
-          # IO.puts("hshe")
-          n
-      end
-    end)
-  end
-
-  defp convert_to_ast_node(object) do
-    case object do
-      %Evaluator.Integer{} = int -> %Parser.IntegerLiteral{token: %Lexer.Token{type: :int, literal: "#{int}"}, value: int.value}
-      %Evaluator.Boolean{value: true} -> %Parser.Boolean{token: %Lexer.Token{type: :true, literal: "true"}, value: true}
-      %Evaluator.Boolean{value: false} -> %Parser.Boolean{token: %Lexer.Token{type: :false, literal: "false"}, value: false}
-      %Evaluator.Quote{} -> object.node
-    end
-  end
 
   def eval(%Parser.ArrayLiteral{} = array, %Evaluator.Environment{} = environment) do
     case eval_expressions(array.elements, environment) do

@@ -27,12 +27,18 @@ defmodule Repl.Repl do
           {:ok, program} -> 
             case Evaluator.define_macros(program, macro_env) do
               {:ok, program, macro_env} -> 
-                expanded = Evaluator.expand_macros(program, macro_env)
-                case Evaluator.eval(expanded, env) do
-                  {:ok, evaluated, env} -> IO.puts(evaluated)
-                    loop(env, macro_env)
+                # expanded = Evaluator.expand_macros(program, macro_env)
+                case Evaluator.expand_macros(program, macro_env) do
                   {:error, error} -> IO.puts(IO.ANSI.red() <> error.message <> IO.ANSI.reset())
                     loop(env, macro_env)
+                  {:ok, expanded} -> 
+                    # IO.inspect(expanded)
+                    case Evaluator.eval(expanded, env) do
+                    {:ok, evaluated, env} -> IO.puts(evaluated)
+                      loop(env, macro_env)
+                    {:error, error} -> IO.puts(IO.ANSI.red() <> error.message <> IO.ANSI.reset())
+                      loop(env, macro_env)
+                  end
                 end
             end
           {:error, errors} -> 

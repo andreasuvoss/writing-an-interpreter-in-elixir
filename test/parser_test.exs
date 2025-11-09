@@ -760,9 +760,9 @@ defmodule ParserTest do
 
     turn_one_into_two = fn %IntegerLiteral{} = node ->
       if node.value != 1 do
-        node
+        {:ok, node}
       else
-        %{node | value: 2}
+        {:ok, %{node | value: 2}}
       end
     end
 
@@ -875,7 +875,7 @@ defmodule ParserTest do
 
     tests
     |> Enum.each(fn test ->
-      modified = Parser.Modify.modify(test.input, turn_one_into_two)
+      {:ok, modified} = Parser.Modify.modify(test.input, turn_one_into_two)
       assert modified == test.expected
     end)
   end

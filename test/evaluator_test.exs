@@ -445,7 +445,7 @@ defmodule EvaluatorTest do
     {:ok, program, env} = Evaluator.define_macros(program, %Evaluator.Environment{})
 
     assert length(program.statements) == 2
-    assert length(Map.keys(env.store)) == 1
+    assert map_size(env.store) == 1
 
     assert Evaluator.Environment.get(env, "mymacro") ==
              {:ok,
@@ -497,15 +497,16 @@ defmodule EvaluatorTest do
     ]
     tests
     |> Enum.each(fn test ->
-      tokens = Lexer.Lexer.tokenize(test.input)
       expected = test_parse_program(test.expected)
       program = test_parse_program(test.input)
       {:ok, program, env} = Evaluator.define_macros(program, %Evaluator.Environment{})
 
-      expanded = Evaluator.expand_macros(program, env)
+      # IO.inspect(program)
+      # IO.inspect(env)
+      {:ok, expanded} = Evaluator.expand_macros(program, env)
       # IO.inspect(expanded)
-      # IO.inspect(expected)
-      # {:ok, expanded, _} = Evaluator.expand_macros(program, env)
+
+      # IO.inspect(expanded)
       assert "#{expected}" == "#{expanded}"
     end)
   end
