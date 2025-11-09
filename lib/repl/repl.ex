@@ -10,7 +10,7 @@ defmodule Repl.Repl do
         IO.inspect(env)
         loop(env, macro_env)
       ":macro_env\n" -> 
-        IO.inspect(env)
+        IO.inspect(macro_env)
         loop(env, macro_env)
       ":memory\n" -> 
         case :erlang.process_info(self(), :memory) do
@@ -23,30 +23,23 @@ defmodule Repl.Repl do
         loop(env, macro_env)
       _ ->
         tokens = Lexer.Lexer.tokenize(String.trim(input))
-        case Parser.Parser.parse_program(tokens) do
-          {:ok, program} -> 
-            case Evaluator.define_macros(program, macro_env) do
-              {:ok, program, macro_env} -> 
-                # expanded = Evaluator.expand_macros(program, macro_env)
-                case Evaluator.expand_macros(program, macro_env) do
-                  {:error, error} -> IO.puts(IO.ANSI.red() <> error.message <> IO.ANSI.reset())
-                    loop(env, macro_env)
-                  {:ok, expanded} -> 
-                    # IO.inspect(expanded)
-                    case Evaluator.eval(expanded, env) do
-                    {:ok, evaluated, env} -> IO.puts(evaluated)
-                      loop(env, macro_env)
-                    {:error, error} -> IO.puts(IO.ANSI.red() <> error.message <> IO.ANSI.reset())
-                      loop(env, macro_env)
-                  end
-                end
-            end
-          {:error, errors} -> 
+        with {:ok, program} <- Parser.Parser.parse_program(tokens),
+             {:ok, program, macro_env} <- Evaluator.define_macros(program, macro_env),
+             {:ok, expanded} <- Evaluator.expand_macros(program, macro_env),
+             {:ok, evaluated, env} <- Evaluator.eval(expanded, env)
+        do
+            IO.puts(evaluated)
+            loop(env, macro_env)
+        else
+          {:error, [_] = errors} -> 
             IO.puts(monkey_faces())
             IO.puts("Woops! We ran into some monkey business here!")
             IO.puts("parser errors:")
             errors |> Enum.with_index(1) |> Enum.each(fn {line, index} -> IO.puts("\t#{index}. #{line}") end)
             loop(env, macro_env)
+          {:error, error} -> IO.puts(IO.ANSI.red() <> error.message <> IO.ANSI.reset())
+              loop(env, macro_env)
+            
         end
     end
   end

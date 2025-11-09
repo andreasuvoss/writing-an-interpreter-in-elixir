@@ -170,7 +170,6 @@ defmodule EvaluatorTest do
   @tag disabled: true
   test "let statement" do
     tests = [
-      # %{input: "let a = 5; a;", expected: 0},
       %{input: "let a = 5; a;", expected: 5},
       %{input: "let a = 5 * 5; a;", expected: 25},
       %{input: "let a = 5; let b = a; b;", expected: 5},
@@ -188,21 +187,12 @@ defmodule EvaluatorTest do
 
   @tag disabled: true
   test "functions" do
-    tests = [
-      # %{input: "let a = 5; a;", expected: 0},
-      %{input: "fn(x) { x + 2 };", expected: 5}
-      # %{input: "let a = 5 * 5; a;", expected: 25},
-      # %{input: "let a = 5; let b = a; b;", expected: 5},
-      # %{input: "let a = 5; let b = a; let c = a + b + 5; c;", expected: 15},
-    ]
+    input = "fn(x) { x + 2 };"
 
-    tests
-    |> Enum.each(fn test ->
-      tokens = Lexer.Lexer.tokenize(test.input)
-      {:ok, program} = Parser.Parser.parse_program(tokens)
-      {:ok, evaluated, _} = Evaluator.eval(program, %Evaluator.Environment{})
-      assert %Evaluator.Function{} = evaluated
-    end)
+    tokens = Lexer.Lexer.tokenize(input)
+    {:ok, program} = Parser.Parser.parse_program(tokens)
+    {:ok, evaluated, _} = Evaluator.eval(program, %Evaluator.Environment{})
+    assert %Evaluator.Function{} = evaluated
   end
 
   @tag disabled: true

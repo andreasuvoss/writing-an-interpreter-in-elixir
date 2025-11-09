@@ -20,6 +20,8 @@ defmodule Evaluator do
   end
 
   defp add_macros([%Parser.LetStatement{} = macro | tail], %Evaluator.Environment{} = environment) do
+    # IO.puts("adding macro")
+    # IO.inspect(macro)
     environment = add_macro(macro, environment)
     add_macros(tail, environment)
   end
@@ -39,7 +41,7 @@ defmodule Evaluator do
 
   defp macro_expansion_modifier(node, environment) do
     with %Parser.CallExpression{function: %Parser.Identifier{} = ident} = call_exp <- node,
-         {:ok, %Evaluator.Macro{} = macro} <- Evaluator.Environment.get(environment, ident.value),
+         {:ok, %Evaluator.Macro{} = macro} <- look_for_macro(ident, environment),
          args = quote_args(call_exp.arguments),
          eval_env = extend_macro_env(macro, args),
          {:ok, quoted, _env} <- eval(macro.body, eval_env)
@@ -47,7 +49,15 @@ defmodule Evaluator do
         {:ok, quoted.node}
     else
       ^node -> {:ok, node}
+      :not_found -> {:ok, node}
       {:error, error} -> {:error, error}
+    end
+  end
+
+  defp look_for_macro(ident, macro_env) do
+    case Evaluator.Environment.get(macro_env, ident.value) do
+      {:ok, %Evaluator.Macro{} = macro} -> {:ok, macro}
+      {:error, _} -> :not_found
     end
   end
 
@@ -73,14 +83,12 @@ defmodule Evaluator do
 
   defp eval_unquote_calls(node, environment) do
     Parser.Modify.modify(node, fn n -> 
-      case n do
-        %Parser.CallExpression{function: %Parser.Identifier{token: %Lexer.Token{literal: "unquote"}}} -> 
-          case eval(Enum.at(n.arguments, 0), environment) do
-            {:ok, ret, _} -> {:ok, convert_to_ast_node(ret)}
-            _ -> {:error, "test"}
-          end
-        _ -> 
-          {:ok, n}
+      with %Parser.CallExpression{function: %Parser.Identifier{token: %Lexer.Token{literal: "unquote"}}} <- n,
+           {:ok, ret, _} <- eval(Enum.at(n.arguments, 0), environment) 
+      do
+        {:ok, convert_to_ast_node(ret)}
+      else
+        ^n -> {:ok, n} 
       end
     end)
   end
@@ -117,12 +125,13 @@ defmodule Evaluator do
   end
 
   def eval(%Parser.IfExpression{} = expr, %Evaluator.Environment{} = environment) do
-    case eval(expr.condition, environment) do
-      {:ok, condition, env} -> case {is_truthy?(condition), expr.alternative} do
+    with {:ok, condition, env} <- eval(expr.condition, environment) do
+      case {is_truthy?(condition), expr.alternative} do
         {true, _} -> eval(expr.consequence, env)
         {false, nil} -> {:ok, %Evaluator.Null{}, env}
         {false, alternative} -> eval(alternative, env)
       end
+    else
       {:error, error} -> {:error, error}
     end
   end
@@ -147,12 +156,11 @@ defmodule Evaluator do
   end
 
   def eval(%Parser.InfixExpression{} = expr, %Evaluator.Environment{} = environment) do
-    case eval(expr.left, environment) do
-      {:ok, left, env} ->
-        case eval(expr.right, env) do
-          {:ok, right, env} -> eval_infix_expression(expr.operator, left, right, env)
-          {:error, error} -> {:error, error}
-        end
+    with {:ok, left, env} <- eval(expr.left, environment),
+         {:ok, right, env} <- eval(expr.right, env) 
+    do
+      eval_infix_expression(expr.operator, left, right, env)
+    else
       {:error, error} -> {:error, error}
     end
   end
@@ -324,7 +332,6 @@ defmodule Evaluator do
         end)
         {:ok, %Evaluator.Null{}}
       end}}
-
       _ -> {:error, "identifier not found: #{identifier.token.literal}"}
     end
   end
