@@ -1,11 +1,18 @@
-defmodule Repl.Repl do
-  alias Evaluator.Environment
+defmodule Repl do
   # TODO: Maybe try to get command history: https://elixirforum.com/t/command-history-on-custom-cli-not-working-with-otp-26-but-was-with-otp-25/65702
-  def loop(%Environment{} = env, %Environment{} = macro_env) do
+  def loop(%Object.Environment{} = env, %Object.Environment{} = macro_env) do
     IO.write(">> ")
     input = IO.read(:line)
     case input do
       ":q\n" -> nil
+      ":help\n" ->
+        IO.puts("   :q \t\t -> quits the interpreter")
+        IO.puts("   :env \t -> shows the environment used when evaluating the program")
+        IO.puts("   :macro_env \t -> shows the environment used when evaluating macros")
+        IO.puts("   :memory \t -> shows how much memory the interpreter is using")
+        IO.puts("   :gc \t\t -> force Erlang VM garbage collection")
+        IO.puts("   :help\t -> shows this message")
+        loop(env, macro_env)
       ":env\n" -> 
         IO.inspect(env)
         loop(env, macro_env)
@@ -22,8 +29,8 @@ defmodule Repl.Repl do
         :erlang.garbage_collect(self())
         loop(env, macro_env)
       _ ->
-        tokens = Lexer.Lexer.tokenize(String.trim(input))
-        with {:ok, program} <- Parser.Parser.parse_program(tokens),
+        tokens = Lexer.tokenize(String.trim(input))
+        with {:ok, program} <- Parser.parse_program(tokens),
              {:ok, program, macro_env} <- Evaluator.define_macros(program, macro_env),
              {:ok, expanded} <- Evaluator.expand_macros(program, macro_env),
              {:ok, evaluated, env} <- Evaluator.eval(expanded, env)
@@ -31,22 +38,17 @@ defmodule Repl.Repl do
             IO.puts(evaluated)
             loop(env, macro_env)
         else
-          {:error, [_] = errors} -> 
+          {:error, [_ | _] = errors} -> 
             IO.puts(monkey_faces())
             IO.puts("Woops! We ran into some monkey business here!")
             IO.puts("parser errors:")
-            errors |> Enum.with_index(1) |> Enum.each(fn {line, index} -> IO.puts("\t#{index}. #{line}") end)
+            errors |> Enum.with_index(1) |> Enum.each(fn {line, index} -> IO.puts("   #{index}. #{line}") end)
             loop(env, macro_env)
           {:error, error} -> IO.puts(IO.ANSI.red() <> error.message <> IO.ANSI.reset())
               loop(env, macro_env)
-            
         end
     end
   end
-
-# let unless = macro(condition, consequence, alternative) { quote(if (!(unquote(condition))) { unquote(consequence); } else { unquote(alternative); }); }
-# unless(10 > 5, puts("not greater"), puts("greater"));
-
 
   def monkey_faces() do
     """
@@ -61,6 +63,6 @@ defmodule Repl.Repl do
   end
 
   def start() do
-    loop(%Environment{}, %Environment{})
+    loop(%Object.Environment{}, %Object.Environment{})
   end
 end

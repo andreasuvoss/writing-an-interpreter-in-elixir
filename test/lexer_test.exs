@@ -1,6 +1,5 @@
 defmodule LexerTest do
   alias Lexer.Token
-  alias Lexer.Lexer
   use ExUnit.Case
 
   @tag disabled: true
@@ -154,8 +153,6 @@ defmodule LexerTest do
       %Token{type: :semicolon, literal: ";"},
       %Token{type: :eof, literal: ""}
     ]
-
-    #    {"name": "Jimmy", "age": 81, "alive": true, "band": "Led Zeppelin"};
 
     assert Lexer.tokenize(input) == tests
   end

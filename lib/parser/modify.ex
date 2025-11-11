@@ -1,61 +1,35 @@
 defmodule Parser.Modify do
-
-  # defp modify_nodes(nodes, mod, acc \\ [])
-  #
-  # defp modify_nodes([node | tail], modifier, acc) do
-  #   case modify(node, modifier) do
-  #     {:ok, node} -> modify_nodes(tail, modifier, [node | acc])
-  #     {:error, error} -> {:error, error}
-  #   end
-  # end
-  #
-  # defp modify_nodes([], _, acc), do: {:ok, Enum.reverse(acc)}
-
-  def modify(%Parser.Program{} = node, modifier) do
-    # statements = Enum.map(node.statements, fn x -> modify(x, modifier) end)
+  def modify(%AST.Program{} = node, modifier) do
     case traverse_nodes(node.statements, fn x -> modify(x, modifier) end) do
       {:ok, stmts} -> {:ok, %{node | statements: stmts}}
       {:error, error} -> {:error, error}
     end
-    #
-    # case modify_nodes(node.statements, fn x -> modify(x, modifier) end) do
-    #   {:ok, stmts} -> {:ok, %{node | statements: stmts}}
-    #   {:error, error} -> {:error, error}
-    # end
   end
 
-  def modify(%Parser.ExpressionStatement{} = node, modifier) do
+  def modify(%AST.ExpressionStatement{} = node, modifier) do
     case modify(node.expression, modifier) do
       {:ok, expr} -> {:ok, %{node | expression: expr}}
       {:error, error} -> {:error, error}
     end
   end
 
-  def modify(%Parser.InfixExpression{} = node, modifier) do
+  def modify(%AST.InfixExpression{} = node, modifier) do
     with {:ok, left} <- modify(node.left, modifier),
          {:ok, right} <- modify(node.right, modifier) do
       {:ok, %{node | left: left, right: right}}
     else
       {:error, error} -> {:error, error}
     end
-
-    # case modify(node.left, modifier) do
-    #   {:error, error} -> {:error, error}
-    #   left-> case modify(node.right, modifier) do
-    #   {:error, error} -> {:error, error}
-    #       right -> %{node | left: left, right: right}
-    #   end
-    # end
   end
 
-  def modify(%Parser.PrefixExpression{} = node, modifier) do
+  def modify(%AST.PrefixExpression{} = node, modifier) do
     case modify(node.right, modifier) do
       {:ok, right} -> {:ok, %{node | right: right}}
       {:error, error} -> {:error, error}
     end
   end
 
-  def modify(%Parser.IndexExpression{} = node, modifier) do
+  def modify(%AST.IndexExpression{} = node, modifier) do
     with {:ok, left} <- modify(node.left, modifier),
          {:ok, index} <- modify(node.index, modifier) do
       {:ok, %{node | left: left, index: index}}
@@ -64,7 +38,7 @@ defmodule Parser.Modify do
     end
   end
 
-  def modify(%Parser.BlockStatement{} = node, modifier) do
+  def modify(%AST.BlockStatement{} = node, modifier) do
     case traverse_nodes(node.statements, fn x -> modify(x, modifier) end) do
       {:ok, stmts} -> 
         {:ok, %{node | statements: stmts}}
@@ -72,7 +46,7 @@ defmodule Parser.Modify do
     end
   end
 
-  def modify(%Parser.IfExpression{alternative: nil} = node, modifier) do
+  def modify(%AST.IfExpression{alternative: nil} = node, modifier) do
     with {:ok, condition} <- modify(node.condition, modifier),
          {:ok, consequence} <- modify(node.consequence, modifier) do
       {:ok, %{node | condition: condition, consequence: consequence}}
@@ -81,7 +55,7 @@ defmodule Parser.Modify do
     end
   end
 
-  def modify(%Parser.IfExpression{} = node, modifier) do
+  def modify(%AST.IfExpression{} = node, modifier) do
     with {:ok, condition} <- modify(node.condition, modifier),
          {:ok, consequence} <- modify(node.consequence, modifier),
          {:ok, alternative} <- modify(node.alternative, modifier) do
@@ -91,47 +65,41 @@ defmodule Parser.Modify do
     end
   end
 
-  def modify(%Parser.ReturnStatement{} = node, modifier) do
+  def modify(%AST.ReturnStatement{} = node, modifier) do
     case modify(node.return_value, modifier) do
       {:ok, return_value} -> {:ok, %{node | return_value: return_value}}
       {:error, error} -> {:error, error}
     end
   end
 
-  def modify(%Parser.LetStatement{} = node, modifier) do
+  def modify(%AST.LetStatement{} = node, modifier) do
     case modify(node.value, modifier) do
       {:ok, value} -> {:ok, %{node | value: value}}
       {:error, error} -> {:error, error}
     end
   end
 
-  def modify(%Parser.FunctionLiteral{} = node, modifier) do
+  def modify(%AST.FunctionLiteral{} = node, modifier) do
     with {:ok, parameters} <- traverse_nodes(node.parameters, fn x -> modify(x, modifier) end),
          {:ok, body} <- modify(node.body, modifier) do
       {:ok, %{node | body: body, parameters: parameters}}
     else
       {:error, error} -> {:error, error}
     end
-    # case traverse_nodes(node.parameters, fn x -> modify(x, modifier) end) do
-    #   {:ok, parameters} -> {:ok, %{node | parameters: parameters}}
-    #   {:error, error} -> {:error, error}
-    # end
   end
 
-  def modify(%Parser.ArrayLiteral{} = node, modifier) do
+  def modify(%AST.ArrayLiteral{} = node, modifier) do
     case traverse_nodes(node.elements, fn x -> modify(x, modifier) end) do
       {:ok, elements} -> {:ok, %{node | elements: elements}}
       {:error, error} -> {:error, error}
     end
   end
 
-  def modify(%Parser.HashLiteral{} = node, modifier) do
+  def modify(%AST.HashLiteral{} = node, modifier) do
     case traverse_map(node.pairs, &modify(&1, modifier)) do
       {:ok, pairs} -> {:ok, %{node | pairs: pairs}}
       {:error, _} = error -> error
     end
-    # pairs = Map.new(node.pairs, fn {k, v} -> {modify(k, modifier), modify(v, modifier)} end)
-    # %{node | pairs: pairs}
   end
 
   def modify(node, modifier) do

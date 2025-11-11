@@ -1,13 +1,5 @@
 defmodule ParserTest do
-  alias Parser.BlockStatement
-  alias Parser.ArrayLiteral
-  alias Parser.ExpressionStatement
-  alias Parser.Boolean
-  alias Parser.IntegerLiteral
-  alias Parser.InfixExpression
-  alias Parser.Identifier
   alias Lexer.Token
-  alias Lexer.Lexer
   use ExUnit.Case
 
   @tag disabled: true
@@ -20,7 +12,7 @@ defmodule ParserTest do
 
     tokens = Lexer.tokenize(input)
 
-    {:ok, program} = Parser.Parser.parse_program(tokens)
+    {:ok, program} = Parser.parse_program(tokens)
 
     tests = [
       "x",
@@ -47,7 +39,7 @@ defmodule ParserTest do
 
     tokens = Lexer.tokenize(input)
 
-    {:ok, program} = Parser.Parser.parse_program(tokens)
+    {:ok, program} = Parser.parse_program(tokens)
 
     tests = [
       "5",
@@ -59,22 +51,22 @@ defmodule ParserTest do
 
     Enum.zip(program.statements, tests)
     |> Enum.each(fn {statement, _} ->
-      assert statement |> Parser.Statement.token_literal() == "return"
+      assert statement |> AST.Statement.token_literal() == "return"
       assert statement.token.type == :return
     end)
   end
 
   @tag disabled: true
   test "stringify program" do
-    program = %Parser.Program{
+    program = %AST.Program{
       statements: [
-        %Parser.LetStatement{
+        %AST.LetStatement{
           token: %Token{type: :let, literal: "let"},
-          name: %Parser.Identifier{
+          name: %AST.Identifier{
             token: %Token{type: :ident, literal: "myVar"},
             value: "myVar"
           },
-          value: %Parser.Identifier{
+          value: %AST.Identifier{
             token: %Token{type: :ident, literal: "anotherVar"},
             value: "anotherVar"
           }
@@ -91,14 +83,14 @@ defmodule ParserTest do
 
     tokens = Lexer.tokenize(input)
 
-    {:ok, program} = Parser.Parser.parse_program(tokens)
+    {:ok, program} = Parser.parse_program(tokens)
 
     assert length(program.statements) == 1
 
     expression = program.statements |> Enum.at(0)
-    assert %Parser.ExpressionStatement{} = expression
+    assert %AST.ExpressionStatement{} = expression
 
-    assert %Parser.Identifier{token: %Token{type: :ident, literal: "foobar"}, value: "foobar"} =
+    assert %AST.Identifier{token: %Token{type: :ident, literal: "foobar"}, value: "foobar"} =
              expression.expression
   end
 
@@ -108,14 +100,14 @@ defmodule ParserTest do
 
     tokens = Lexer.tokenize(input)
 
-    {:ok, program} = Parser.Parser.parse_program(tokens)
+    {:ok, program} = Parser.parse_program(tokens)
 
     assert length(program.statements) == 1
 
     statement = program.statements |> Enum.at(0)
-    assert %Parser.ExpressionStatement{} = statement
+    assert %AST.ExpressionStatement{} = statement
 
-    assert %Parser.IntegerLiteral{token: %Token{type: :int, literal: "5"}, value: 5} =
+    assert %AST.IntegerLiteral{token: %Token{type: :int, literal: "5"}, value: 5} =
              statement.expression
   end
 
@@ -125,14 +117,14 @@ defmodule ParserTest do
 
     tokens = Lexer.tokenize(input)
 
-    {:ok, program} = Parser.Parser.parse_program(tokens)
+    {:ok, program} = Parser.parse_program(tokens)
 
     assert length(program.statements) == 1
 
     statement = program.statements |> Enum.at(0)
-    assert %Parser.ExpressionStatement{} = statement
+    assert %AST.ExpressionStatement{} = statement
 
-    assert %Parser.StringLiteral{token: %Token{type: :string, literal: "hello"}, value: "hello"} =
+    assert %AST.StringLiteral{token: %Token{type: :string, literal: "hello"}, value: "hello"} =
              statement.expression
   end
 
@@ -142,18 +134,18 @@ defmodule ParserTest do
 
     tokens = Lexer.tokenize(input)
 
-    {:ok, program} = Parser.Parser.parse_program(tokens)
+    {:ok, program} = Parser.parse_program(tokens)
 
     assert length(program.statements) == 1
 
     statement = program.statements |> Enum.at(0)
-    assert %Parser.ExpressionStatement{} = statement
-    assert %Parser.PrefixExpression{} = statement.expression
+    assert %AST.ExpressionStatement{} = statement
+    assert %AST.PrefixExpression{} = statement.expression
 
-    assert %Parser.PrefixExpression{
+    assert %AST.PrefixExpression{
              token: %Token{type: :bang},
              operator: "!",
-             right: %Parser.IntegerLiteral{}
+             right: %AST.IntegerLiteral{}
            } = statement.expression
   end
 
@@ -163,17 +155,17 @@ defmodule ParserTest do
 
     tokens = Lexer.tokenize(input)
 
-    {:ok, program} = Parser.Parser.parse_program(tokens)
+    {:ok, program} = Parser.parse_program(tokens)
 
     assert length(program.statements) == 1
 
     statement = program.statements |> Enum.at(0)
-    assert %Parser.ExpressionStatement{} = statement
+    assert %AST.ExpressionStatement{} = statement
 
-    assert %Parser.PrefixExpression{
+    assert %AST.PrefixExpression{
              token: %Token{type: :minus},
              operator: "-",
-             right: %Parser.IntegerLiteral{}
+             right: %AST.IntegerLiteral{}
            } = statement.expression
   end
 
@@ -183,18 +175,18 @@ defmodule ParserTest do
 
     tokens = Lexer.tokenize(input)
 
-    {:ok, program} = Parser.Parser.parse_program(tokens)
+    {:ok, program} = Parser.parse_program(tokens)
 
     assert length(program.statements) == 1
 
     statement = program.statements |> Enum.at(0)
-    assert %Parser.ExpressionStatement{} = statement
+    assert %AST.ExpressionStatement{} = statement
 
-    assert %Parser.InfixExpression{
+    assert %AST.InfixExpression{
              token: %Token{type: :plus},
              operator: "+",
-             left: %Parser.IntegerLiteral{},
-             right: %Parser.IntegerLiteral{}
+             left: %AST.IntegerLiteral{},
+             right: %AST.IntegerLiteral{}
            } = statement.expression
   end
 
@@ -232,7 +224,7 @@ defmodule ParserTest do
     tests
     |> Enum.each(fn test ->
       tokens = Lexer.tokenize(test.input)
-      {:ok, program} = Parser.Parser.parse_program(tokens)
+      {:ok, program} = Parser.parse_program(tokens)
 
       assert "#{program}" == test.expected
     end)
@@ -244,14 +236,14 @@ defmodule ParserTest do
 
     tokens = Lexer.tokenize(input)
 
-    {:ok, program} = Parser.Parser.parse_program(tokens)
+    {:ok, program} = Parser.parse_program(tokens)
 
     assert length(program.statements) == 1
 
     statement = program.statements |> Enum.at(0)
-    assert %Parser.ExpressionStatement{} = statement
+    assert %AST.ExpressionStatement{} = statement
 
-    assert %Parser.Boolean{token: %Token{type: true, literal: "true"}, value: true} =
+    assert %AST.Boolean{token: %Token{type: true, literal: "true"}, value: true} =
              statement.expression
   end
 
@@ -261,14 +253,14 @@ defmodule ParserTest do
 
     tokens = Lexer.tokenize(input)
 
-    {:ok, program} = Parser.Parser.parse_program(tokens)
+    {:ok, program} = Parser.parse_program(tokens)
 
     assert length(program.statements) == 1
 
     statement = program.statements |> Enum.at(0)
-    assert %Parser.ExpressionStatement{} = statement
+    assert %AST.ExpressionStatement{} = statement
 
-    assert %Parser.Boolean{token: %Token{type: false, literal: "false"}, value: false} =
+    assert %AST.Boolean{token: %Token{type: false, literal: "false"}, value: false} =
              statement.expression
   end
 
@@ -278,14 +270,14 @@ defmodule ParserTest do
 
     tokens = Lexer.tokenize(input)
 
-    {:ok, program} = Parser.Parser.parse_program(tokens)
+    {:ok, program} = Parser.parse_program(tokens)
 
     assert length(program.statements) == 1
 
     statement = program.statements |> Enum.at(0)
-    assert %Parser.LetStatement{} = statement
+    assert %AST.LetStatement{} = statement
 
-    assert %Parser.Boolean{token: %Token{type: true, literal: "true"}, value: true} =
+    assert %AST.Boolean{token: %Token{type: true, literal: "true"}, value: true} =
              statement.value
   end
 
@@ -295,16 +287,16 @@ defmodule ParserTest do
 
     tokens = Lexer.tokenize(input)
 
-    {:ok, program} = Parser.Parser.parse_program(tokens)
+    {:ok, program} = Parser.parse_program(tokens)
 
     assert length(program.statements) == 1
 
     statement = program.statements |> Enum.at(0)
-    assert %Parser.ExpressionStatement{} = statement
+    assert %AST.ExpressionStatement{} = statement
 
-    assert %Parser.IfExpression{
-             consequence: %Parser.BlockStatement{
-               statements: [%Parser.ExpressionStatement{expression: %Identifier{value: "x"}}]
+    assert %AST.IfExpression{
+             consequence: %AST.BlockStatement{
+               statements: [%AST.ExpressionStatement{expression: %AST.Identifier{value: "x"}}]
              },
              alternative: nil
            } = statement.expression
@@ -316,19 +308,19 @@ defmodule ParserTest do
 
     tokens = Lexer.tokenize(input)
 
-    {:ok, program} = Parser.Parser.parse_program(tokens)
+    {:ok, program} = Parser.parse_program(tokens)
 
     assert length(program.statements) == 1
 
     statement = program.statements |> Enum.at(0)
-    assert %Parser.ExpressionStatement{} = statement
+    assert %AST.ExpressionStatement{} = statement
 
-    assert %Parser.IfExpression{
-             consequence: %Parser.BlockStatement{
-               statements: [%Parser.ExpressionStatement{expression: %Identifier{value: "x"}}]
+    assert %AST.IfExpression{
+             consequence: %AST.BlockStatement{
+               statements: [%AST.ExpressionStatement{expression: %AST.Identifier{value: "x"}}]
              },
-             alternative: %Parser.BlockStatement{
-               statements: [%Parser.ExpressionStatement{expression: %Identifier{value: "y"}}]
+             alternative: %AST.BlockStatement{
+               statements: [%AST.ExpressionStatement{expression: %AST.Identifier{value: "y"}}]
              }
            } = statement.expression
   end
@@ -339,29 +331,29 @@ defmodule ParserTest do
 
     tokens = Lexer.tokenize(input)
 
-    {:ok, program} = Parser.Parser.parse_program(tokens)
+    {:ok, program} = Parser.parse_program(tokens)
 
     assert length(program.statements) == 1
 
     statement = program.statements |> Enum.at(0)
-    assert %Parser.ExpressionStatement{} = statement
+    assert %AST.ExpressionStatement{} = statement
 
     assert length(statement.expression.parameters) == 2
     assert length(statement.expression.body.statements) == 1
 
-    assert %Parser.FunctionLiteral{
-             body: %Parser.BlockStatement{
+    assert %AST.FunctionLiteral{
+             body: %AST.BlockStatement{
                statements: [
-                 %Parser.ExpressionStatement{
-                   expression: %InfixExpression{
-                     left: %Identifier{value: "x"},
-                     right: %Identifier{value: "y"},
+                 %AST.ExpressionStatement{
+                   expression: %AST.InfixExpression{
+                     left: %AST.Identifier{value: "x"},
+                     right: %AST.Identifier{value: "y"},
                      operator: "+"
                    }
                  }
                ]
              },
-             parameters: [%Identifier{value: "x"}, %Identifier{value: "y"}]
+             parameters: [%AST.Identifier{value: "x"}, %AST.Identifier{value: "y"}]
            } = statement.expression
   end
 
@@ -371,25 +363,25 @@ defmodule ParserTest do
 
     tokens = Lexer.tokenize(input)
 
-    {:ok, program} = Parser.Parser.parse_program(tokens)
+    {:ok, program} = Parser.parse_program(tokens)
 
     assert length(program.statements) == 1
 
     statement = program.statements |> Enum.at(0)
-    assert %Parser.ExpressionStatement{} = statement
+    assert %AST.ExpressionStatement{} = statement
 
     assert length(statement.expression.parameters) == 1
     assert length(statement.expression.body.statements) == 1
 
-    assert %Parser.FunctionLiteral{
-             body: %Parser.BlockStatement{
+    assert %AST.FunctionLiteral{
+             body: %AST.BlockStatement{
                statements: [
-                 %Parser.ExpressionStatement{
-                   expression: %Identifier{value: "x"}
+                 %AST.ExpressionStatement{
+                   expression: %AST.Identifier{value: "x"}
                  }
                ]
              },
-             parameters: [%Identifier{value: "x"}]
+             parameters: [%AST.Identifier{value: "x"}]
            } = statement.expression
   end
 
@@ -399,23 +391,23 @@ defmodule ParserTest do
 
     tokens = Lexer.tokenize(input)
 
-    {:ok, program} = Parser.Parser.parse_program(tokens)
+    {:ok, program} = Parser.parse_program(tokens)
 
     assert length(program.statements) == 1
 
     statement = program.statements |> Enum.at(0)
-    assert %Parser.ExpressionStatement{} = statement
+    assert %AST.ExpressionStatement{} = statement
 
     assert length(statement.expression.parameters) == 0
     assert length(statement.expression.body.statements) == 1
 
-    assert %Parser.FunctionLiteral{
-             body: %Parser.BlockStatement{
+    assert %AST.FunctionLiteral{
+             body: %AST.BlockStatement{
                statements: [
-                 %Parser.ExpressionStatement{
-                   expression: %InfixExpression{
-                     left: %Identifier{value: "x"},
-                     right: %Identifier{value: "y"},
+                 %AST.ExpressionStatement{
+                   expression: %AST.InfixExpression{
+                     left: %AST.Identifier{value: "x"},
+                     right: %AST.Identifier{value: "y"},
                      operator: "+"
                    }
                  }
@@ -431,18 +423,18 @@ defmodule ParserTest do
 
     tokens = Lexer.tokenize(input)
 
-    {:ok, program} = Parser.Parser.parse_program(tokens)
+    {:ok, program} = Parser.parse_program(tokens)
 
     assert length(program.statements) == 1
 
     statement = program.statements |> Enum.at(0)
-    assert %Parser.ExpressionStatement{} = statement
+    assert %AST.ExpressionStatement{} = statement
 
     assert length(statement.expression.parameters) == 0
     assert length(statement.expression.body.statements) == 0
 
-    assert %Parser.FunctionLiteral{
-             body: %Parser.BlockStatement{
+    assert %AST.FunctionLiteral{
+             body: %AST.BlockStatement{
                statements: []
              },
              parameters: []
@@ -451,32 +443,31 @@ defmodule ParserTest do
 
   @tag disabled: true
   test "call expression" do
-    # input = "add()"
     input = "add(1, 2 * 3, 4 + 5)"
 
     tokens = Lexer.tokenize(input)
 
-    {:ok, program} = Parser.Parser.parse_program(tokens)
+    {:ok, program} = Parser.parse_program(tokens)
 
     assert length(program.statements) == 1
 
     statement = program.statements |> Enum.at(0)
-    assert %Parser.ExpressionStatement{} = statement
+    assert %AST.ExpressionStatement{} = statement
 
     assert length(statement.expression.arguments) == 3
 
-    assert %Parser.CallExpression{
-             function: %Identifier{value: "add"},
+    assert %AST.CallExpression{
+             function: %AST.Identifier{value: "add"},
              arguments: [
-               %IntegerLiteral{value: 1},
-               %InfixExpression{
-                 left: %IntegerLiteral{value: 2},
-                 right: %IntegerLiteral{value: 3},
+               %AST.IntegerLiteral{value: 1},
+               %AST.InfixExpression{
+                 left: %AST.IntegerLiteral{value: 2},
+                 right: %AST.IntegerLiteral{value: 3},
                  operator: "*"
                },
-               %InfixExpression{
-                 left: %IntegerLiteral{value: 4},
-                 right: %IntegerLiteral{value: 5},
+               %AST.InfixExpression{
+                 left: %AST.IntegerLiteral{value: 4},
+                 right: %AST.IntegerLiteral{value: 5},
                  operator: "+"
                }
              ]
@@ -498,7 +489,7 @@ defmodule ParserTest do
     tests
     |> Enum.each(fn test ->
       tokens = Lexer.tokenize(test.input)
-      {:ok, program} = Parser.Parser.parse_program(tokens)
+      {:ok, program} = Parser.parse_program(tokens)
 
       assert "#{program}" == test.expected
     end)
@@ -509,39 +500,39 @@ defmodule ParserTest do
     tests = [
       %{
         input: "{\"one\": 1, \"two\": 2, \"three\": 3}",
-        expected: %ExpressionStatement{
-          expression: %Parser.HashLiteral{
+        expected: %AST.ExpressionStatement{
+          expression: %AST.HashLiteral{
             pairs: %{
-              %Parser.StringLiteral{token: %Token{literal: "one", type: :string}, value: "one"} =>
-                %Parser.IntegerLiteral{token: %Token{literal: "1", type: :int}, value: 1},
-              %Parser.StringLiteral{token: %Token{literal: "two", type: :string}, value: "two"} =>
-                %Parser.IntegerLiteral{token: %Token{literal: "2", type: :int}, value: 2},
-              %Parser.StringLiteral{
+              %AST.StringLiteral{token: %Token{literal: "one", type: :string}, value: "one"} =>
+                %AST.IntegerLiteral{token: %Token{literal: "1", type: :int}, value: 1},
+              %AST.StringLiteral{token: %Token{literal: "two", type: :string}, value: "two"} =>
+                %AST.IntegerLiteral{token: %Token{literal: "2", type: :int}, value: 2},
+              %AST.StringLiteral{
                 token: %Token{literal: "three", type: :string},
                 value: "three"
-              } => %Parser.IntegerLiteral{token: %Token{literal: "3", type: :int}, value: 3}
+              } => %AST.IntegerLiteral{token: %Token{literal: "3", type: :int}, value: 3}
             }
           }
         }
       },
       %{
         input: "{1: \"one\", true: 2, 4*2: 3+8}",
-        expected: %ExpressionStatement{
-          expression: %Parser.HashLiteral{
+        expected: %AST.ExpressionStatement{
+          expression: %AST.HashLiteral{
             pairs: %{
-              %Parser.IntegerLiteral{token: %Token{literal: "1", type: :int}, value: 1} =>
-                %Parser.StringLiteral{token: %Token{literal: "one", type: :string}, value: "one"},
-              %Parser.Boolean{token: %Token{literal: "true", type: true}, value: true} =>
-                %Parser.IntegerLiteral{token: %Token{literal: "2", type: :int}, value: 2},
-              %Parser.InfixExpression{
+              %AST.IntegerLiteral{token: %Token{literal: "1", type: :int}, value: 1} =>
+                %AST.StringLiteral{token: %Token{literal: "one", type: :string}, value: "one"},
+              %AST.Boolean{token: %Token{literal: "true", type: true}, value: true} =>
+                %AST.IntegerLiteral{token: %Token{literal: "2", type: :int}, value: 2},
+              %AST.InfixExpression{
                 token: %Token{literal: "*", type: :asterix},
-                left: %Parser.IntegerLiteral{token: %Token{literal: "4", type: :int}, value: 4},
-                right: %Parser.IntegerLiteral{token: %Token{literal: "2", type: :int}, value: 2},
+                left: %AST.IntegerLiteral{token: %Token{literal: "4", type: :int}, value: 4},
+                right: %AST.IntegerLiteral{token: %Token{literal: "2", type: :int}, value: 2},
                 operator: "*"
-              } => %Parser.InfixExpression{
+              } => %AST.InfixExpression{
                 token: %Token{literal: "+", type: :plus},
-                left: %Parser.IntegerLiteral{token: %Token{literal: "3", type: :int}, value: 3},
-                right: %Parser.IntegerLiteral{token: %Token{literal: "8", type: :int}, value: 8},
+                left: %AST.IntegerLiteral{token: %Token{literal: "3", type: :int}, value: 3},
+                right: %AST.IntegerLiteral{token: %Token{literal: "8", type: :int}, value: 8},
                 operator: "+"
               }
             }
@@ -550,8 +541,8 @@ defmodule ParserTest do
       },
       %{
         input: "{}",
-        expected: %ExpressionStatement{
-          expression: %Parser.HashLiteral{
+        expected: %AST.ExpressionStatement{
+          expression: %AST.HashLiteral{
             pairs: %{}
           }
         }
@@ -561,7 +552,7 @@ defmodule ParserTest do
     tests
     |> Enum.each(fn test ->
       tokens = Lexer.tokenize(test.input)
-      {:ok, program} = Parser.Parser.parse_program(tokens)
+      {:ok, program} = Parser.parse_program(tokens)
 
       statement = program.statements |> Enum.at(0)
 
@@ -574,20 +565,20 @@ defmodule ParserTest do
     tests = [
       %{
         input: "[1, 2 * 2, 3 + 3]",
-        expected: %ExpressionStatement{
-          expression: %ArrayLiteral{
+        expected: %AST.ExpressionStatement{
+          expression: %AST.ArrayLiteral{
             elements: [
-              %Parser.IntegerLiteral{token: %Token{literal: "1", type: :int}, value: 1},
-              %Parser.InfixExpression{
-                left: %Parser.IntegerLiteral{token: %Token{type: :int, literal: "2"}, value: 2},
+              %AST.IntegerLiteral{token: %Token{literal: "1", type: :int}, value: 1},
+              %AST.InfixExpression{
+                left: %AST.IntegerLiteral{token: %Token{type: :int, literal: "2"}, value: 2},
                 operator: "*",
-                right: %Parser.IntegerLiteral{token: %Token{type: :int, literal: "2"}, value: 2},
+                right: %AST.IntegerLiteral{token: %Token{type: :int, literal: "2"}, value: 2},
                 token: %Token{literal: "*", type: :asterix}
               },
-              %Parser.InfixExpression{
-                left: %Parser.IntegerLiteral{token: %Token{type: :int, literal: "3"}, value: 3},
+              %AST.InfixExpression{
+                left: %AST.IntegerLiteral{token: %Token{type: :int, literal: "3"}, value: 3},
                 operator: "+",
-                right: %Parser.IntegerLiteral{token: %Token{type: :int, literal: "3"}, value: 3},
+                right: %AST.IntegerLiteral{token: %Token{type: :int, literal: "3"}, value: 3},
                 token: %Token{literal: "+", type: :plus}
               }
             ]
@@ -599,7 +590,7 @@ defmodule ParserTest do
     tests
     |> Enum.each(fn test ->
       tokens = Lexer.tokenize(test.input)
-      {:ok, program} = Parser.Parser.parse_program(tokens)
+      {:ok, program} = Parser.parse_program(tokens)
 
       statement = program.statements |> Enum.at(0)
 
@@ -612,10 +603,10 @@ defmodule ParserTest do
     tests = [
       %{
         input: "foobar[1]",
-        expected: %Parser.ExpressionStatement{
-          expression: %Parser.IndexExpression{
-            index: %Parser.IntegerLiteral{token: %Token{type: :int, literal: "1"}, value: 1},
-            left: %Parser.Identifier{
+        expected: %AST.ExpressionStatement{
+          expression: %AST.IndexExpression{
+            index: %AST.IntegerLiteral{token: %Token{type: :int, literal: "1"}, value: 1},
+            left: %AST.Identifier{
               token: %Token{type: :ident, literal: "foobar"},
               value: "foobar"
             },
@@ -629,7 +620,7 @@ defmodule ParserTest do
     tests
     |> Enum.each(fn test ->
       tokens = Lexer.tokenize(test.input)
-      {:ok, program} = Parser.Parser.parse_program(tokens)
+      {:ok, program} = Parser.parse_program(tokens)
 
       statement = program.statements |> Enum.at(0)
 
@@ -642,14 +633,14 @@ defmodule ParserTest do
     tests = [
       %{
         input: "{123: true}[0]",
-        expected: %Parser.ExpressionStatement{
-          expression: %Parser.IndexExpression{
-            index: %Parser.IntegerLiteral{token: %Token{type: :int, literal: "0"}, value: 0},
-            left: %Parser.HashLiteral{
+        expected: %AST.ExpressionStatement{
+          expression: %AST.IndexExpression{
+            index: %AST.IntegerLiteral{token: %Token{type: :int, literal: "0"}, value: 0},
+            left: %AST.HashLiteral{
               token: %Token{type: :rbracket, literal: "{"},
               pairs: %{
-                %IntegerLiteral{value: 123, token: %Token{type: :int, literal: "123"}} =>
-                  %Boolean{value: true}
+                %AST.IntegerLiteral{value: 123, token: %Token{type: :int, literal: "123"}} =>
+                  %AST.Boolean{value: true}
               }
             },
             token: %Token{literal: "[", type: :lbracket}
@@ -662,7 +653,7 @@ defmodule ParserTest do
     tests
     |> Enum.each(fn test ->
       tokens = Lexer.tokenize(test.input)
-      {:ok, program} = Parser.Parser.parse_program(tokens)
+      {:ok, program} = Parser.parse_program(tokens)
 
       statement = program.statements |> Enum.at(0)
 
@@ -675,18 +666,18 @@ defmodule ParserTest do
     tests = [
       %{
         input: "foobar[1] + 1",
-        expected: %Parser.ExpressionStatement{
-          expression: %Parser.InfixExpression{
-            left: %Parser.IndexExpression{
-              index: %Parser.IntegerLiteral{value: 1, token: %Token{type: :int, literal: "1"}},
-              left: %Parser.Identifier{
+        expected: %AST.ExpressionStatement{
+          expression: %AST.InfixExpression{
+            left: %AST.IndexExpression{
+              index: %AST.IntegerLiteral{value: 1, token: %Token{type: :int, literal: "1"}},
+              left: %AST.Identifier{
                 value: "foobar",
                 token: %Token{type: :ident, literal: "foobar"}
               },
               token: %Token{type: :lbracket, literal: "["}
             },
             operator: "+",
-            right: %Parser.IntegerLiteral{token: %Token{type: :int, literal: "1"}, value: 1},
+            right: %AST.IntegerLiteral{token: %Token{type: :int, literal: "1"}, value: 1},
             token: %Token{literal: "+", type: :plus}
           },
           token: %Token{literal: nil, type: :expression}
@@ -697,7 +688,7 @@ defmodule ParserTest do
     tests
     |> Enum.each(fn test ->
       tokens = Lexer.tokenize(test.input)
-      {:ok, program} = Parser.Parser.parse_program(tokens)
+      {:ok, program} = Parser.parse_program(tokens)
 
       statement = program.statements |> Enum.at(0)
 
@@ -710,43 +701,43 @@ defmodule ParserTest do
     tests = [
       %{
         input: "let x = 5;",
-        expected: %Parser.LetStatement{
-          name: %Identifier{value: "x"},
-          value: %IntegerLiteral{value: 5}
+        expected: %AST.LetStatement{
+          name: %AST.Identifier{value: "x"},
+          value: %AST.IntegerLiteral{value: 5}
         }
       },
       %{
         input: "let y = true;",
-        expected: %Parser.LetStatement{
-          name: %Identifier{value: "y"},
-          value: %Boolean{value: true}
+        expected: %AST.LetStatement{
+          name: %AST.Identifier{value: "y"},
+          value: %AST.Boolean{value: true}
         }
       },
       %{
         input: "let foobar = y;",
-        expected: %Parser.LetStatement{
-          name: %Identifier{value: "foobar"},
-          value: %Identifier{value: "y"}
+        expected: %AST.LetStatement{
+          name: %AST.Identifier{value: "foobar"},
+          value: %AST.Identifier{value: "y"}
         }
       },
       %{
         input: "return 5;",
-        expected: %Parser.ReturnStatement{return_value: %IntegerLiteral{value: 5}}
+        expected: %AST.ReturnStatement{return_value: %AST.IntegerLiteral{value: 5}}
       },
       %{
         input: "return true;",
-        expected: %Parser.ReturnStatement{return_value: %Boolean{value: true}}
+        expected: %AST.ReturnStatement{return_value: %AST.Boolean{value: true}}
       },
       %{
         input: "return foobar;",
-        expected: %Parser.ReturnStatement{return_value: %Identifier{value: "foobar"}}
+        expected: %AST.ReturnStatement{return_value: %AST.Identifier{value: "foobar"}}
       }
     ]
 
     tests
     |> Enum.each(fn test ->
       tokens = Lexer.tokenize(test.input)
-      {:ok, program} = Parser.Parser.parse_program(tokens)
+      {:ok, program} = Parser.parse_program(tokens)
 
       _statement = program.statements |> Enum.at(0)
       assert _statement = test.expected
@@ -755,10 +746,10 @@ defmodule ParserTest do
 
   @tag disabled: true
   test "modify" do
-    one = fn -> %ExpressionStatement{expression: %IntegerLiteral{value: 1}} end
-    two = fn -> %ExpressionStatement{expression: %IntegerLiteral{value: 2}} end
+    one = fn -> %AST.ExpressionStatement{expression: %AST.IntegerLiteral{value: 1}} end
+    two = fn -> %AST.ExpressionStatement{expression: %AST.IntegerLiteral{value: 2}} end
 
-    turn_one_into_two = fn %IntegerLiteral{} = node ->
+    turn_one_into_two = fn %AST.IntegerLiteral{} = node ->
       if node.value != 1 do
         {:ok, node}
       else
@@ -772,99 +763,99 @@ defmodule ParserTest do
         expected: two.()
       },
       %{
-        input: %Parser.Program{
+        input: %AST.Program{
           statements: [
-            %ExpressionStatement{expression: one.()}
+            %AST.ExpressionStatement{expression: one.()}
           ]
         },
-        expected: %Parser.Program{
+        expected: %AST.Program{
           statements: [
-            %ExpressionStatement{expression: two.()}
+            %AST.ExpressionStatement{expression: two.()}
           ]
         }
       },
       %{
-        input: %Parser.InfixExpression{left: one.(), operator: "+", right: two.()},
-        expected: %Parser.InfixExpression{left: two.(), operator: "+", right: two.()}
+        input: %AST.InfixExpression{left: one.(), operator: "+", right: two.()},
+        expected: %AST.InfixExpression{left: two.(), operator: "+", right: two.()}
       },
       %{
-        input: %Parser.InfixExpression{left: two.(), operator: "+", right: one.()},
-        expected: %Parser.InfixExpression{left: two.(), operator: "+", right: two.()}
+        input: %AST.InfixExpression{left: two.(), operator: "+", right: one.()},
+        expected: %AST.InfixExpression{left: two.(), operator: "+", right: two.()}
       },
       %{
-        input: %Parser.PrefixExpression{operator: "-", right: one.()},
-        expected: %Parser.PrefixExpression{operator: "-", right: two.()}
+        input: %AST.PrefixExpression{operator: "-", right: one.()},
+        expected: %AST.PrefixExpression{operator: "-", right: two.()}
       },
       %{
-        input: %Parser.IndexExpression{left: one.(), index: one.()},
-        expected: %Parser.IndexExpression{left: two.(), index: two.()}
+        input: %AST.IndexExpression{left: one.(), index: one.()},
+        expected: %AST.IndexExpression{left: two.(), index: two.()}
       },
       %{
-        input: %Parser.IfExpression{
+        input: %AST.IfExpression{
           condition: one.(),
-          consequence: %Parser.BlockStatement{
+          consequence: %AST.BlockStatement{
             statements: [
-              %ExpressionStatement{expression: one.()}
+              %AST.ExpressionStatement{expression: one.()}
             ]
           },
-          alternative: %Parser.BlockStatement{
+          alternative: %AST.BlockStatement{
             statements: [
-              %ExpressionStatement{expression: one.()}
+              %AST.ExpressionStatement{expression: one.()}
             ]
           }
         },
-        expected: %Parser.IfExpression{
+        expected: %AST.IfExpression{
           condition: two.(),
-          consequence: %Parser.BlockStatement{
+          consequence: %AST.BlockStatement{
             statements: [
-              %ExpressionStatement{expression: two.()}
+              %AST.ExpressionStatement{expression: two.()}
             ]
           },
-          alternative: %Parser.BlockStatement{
+          alternative: %AST.BlockStatement{
             statements: [
-              %ExpressionStatement{expression: two.()}
+              %AST.ExpressionStatement{expression: two.()}
             ]
           }
         }
       },
       %{
-        input: %Parser.ReturnStatement{return_value: one.()},
-        expected: %Parser.ReturnStatement{return_value: two.()}
+        input: %AST.ReturnStatement{return_value: one.()},
+        expected: %AST.ReturnStatement{return_value: two.()}
       },
       %{
-        input: %Parser.LetStatement{value: one.()},
-        expected: %Parser.LetStatement{value: two.()}
+        input: %AST.LetStatement{value: one.()},
+        expected: %AST.LetStatement{value: two.()}
       },
       %{
-        input: %Parser.FunctionLiteral{
+        input: %AST.FunctionLiteral{
           parameters: [],
-          body: %BlockStatement{
+          body: %AST.BlockStatement{
             statements: [
-              %ExpressionStatement{expression: one.()}
+              %AST.ExpressionStatement{expression: one.()}
             ]
           }
         },
-        expected: %Parser.FunctionLiteral{
+        expected: %AST.FunctionLiteral{
           parameters: [],
-          body: %BlockStatement{
+          body: %AST.BlockStatement{
             statements: [
-              %ExpressionStatement{expression: two.()}
+              %AST.ExpressionStatement{expression: two.()}
             ]
           }
         }
       },
       %{
-        input: %Parser.ArrayLiteral{elements: [one.()]},
-        expected: %Parser.ArrayLiteral{elements: [two.()]}
+        input: %AST.ArrayLiteral{elements: [one.()]},
+        expected: %AST.ArrayLiteral{elements: [two.()]}
       },
       %{
-        input: %Parser.HashLiteral{
+        input: %AST.HashLiteral{
           pairs: %{
             one.() => one.(),
             one.() => one.()
           }
         },
-        expected: %Parser.HashLiteral{
+        expected: %AST.HashLiteral{
           pairs: %{
             two.() => two.(),
             two.() => two.()
@@ -884,27 +875,27 @@ defmodule ParserTest do
   test "macro literal" do
     input = "macro(x , y) { x + y; }"
     tokens = Lexer.tokenize(input)
-    {:ok, program} = Parser.Parser.parse_program(tokens)
+    {:ok, program} = Parser.parse_program(tokens)
 
     statement = Enum.at(program.statements, 0)
 
     assert length(program.statements) == 1
 
-    assert statement == %Parser.ExpressionStatement{
-             expression: %Parser.MacroLiteral{
-               body: %Parser.BlockStatement{
+    assert statement == %AST.ExpressionStatement{
+             expression: %AST.MacroLiteral{
+               body: %AST.BlockStatement{
                  token: %Token{type: :lbrace, literal: "{"},
                  statements: [
-                   %Parser.ExpressionStatement{
+                   %AST.ExpressionStatement{
                      token: %Token{type: :expression, literal: nil},
-                     expression: %Parser.InfixExpression{
+                     expression: %AST.InfixExpression{
                        token: %Token{type: :plus, literal: "+"},
-                       left: %Parser.Identifier{
+                       left: %AST.Identifier{
                          token: %Token{type: :ident, literal: "x"},
                          value: "x"
                        },
                        operator: "+",
-                       right: %Parser.Identifier{
+                       right: %AST.Identifier{
                          token: %Token{type: :ident, literal: "y"},
                          value: "y"
                        }
@@ -914,8 +905,8 @@ defmodule ParserTest do
                },
                token: %Token{type: :macro, literal: "macro"},
                parameters: [
-                 %Parser.Identifier{token: %Token{type: :ident, literal: "x"}, value: "x"},
-                 %Parser.Identifier{token: %Token{type: :ident, literal: "y"}, value: "y"}
+                 %AST.Identifier{token: %Token{type: :ident, literal: "x"}, value: "x"},
+                 %AST.Identifier{token: %Token{type: :ident, literal: "y"}, value: "y"}
                ]
              },
              token: %Token{literal: nil, type: :expression}
@@ -934,7 +925,7 @@ defmodule ParserTest do
     inputs
     |> Enum.each(fn input ->
       tokens = Lexer.tokenize(input)
-      {result, _} = Parser.Parser.parse_program(tokens)
+      {result, _} = Parser.parse_program(tokens)
 
       if result == :error do
         IO.puts(input)
@@ -944,20 +935,19 @@ defmodule ParserTest do
     end)
   end
 
-  # test "fail parsing" do
-  #   tests = [
-  #     %{input: "let add = fn(){ if(1 == 1) { x  else { y; let q = 1; } }", errors: 4},
-  #     %{input: "let fibonacci = fn(x) { else { if (x == 1) { return 1; } else { fibonacci(x - 1) + fibonacci(x - 2); }}};", errors: 1},
-  #     %{input: "else", errors: 4},
-  #     %{input: "if(true){ u = 7 } else { let x = 1 }", errors: 5},
-  #     %{input: "if(true){ let a = fn(x,y.z){if(x>y>z){ print(x); return x; } else {print(y); print(z) return z;}}}",
-  #   errors:  5}
-  #   ]
-  #   
-  #   tests |> Enum.each(fn test -> 
-  #     tokens = Lexer.tokenize(test.input)
-  #     {result, _} = Parser.Parser.parse_program(tokens)
-  #     assert result == :error
-  #   end)
-  # end
+  test "fail parsing" do
+    tests = [
+      %{input: "let add = fn(){ if(1 == 1) { x  else { y; let q = 1; } }"},
+      %{input: "let fibonacci = fn(x) { else { if (x == 1) { return 1; } else { fibonacci(x - 1) + fibonacci(x - 2); }}};"},
+      %{input: "else"},
+      %{input: "if(true){ u = 7 } else { let x = 1 }"},
+      %{input: "if(true){ let a = fn(x,y.z){if(x>y>z){ print(x); return x; } else {print(y); print(z) return z;}}}"}
+    ]
+    
+    tests |> Enum.each(fn test -> 
+      tokens = Lexer.tokenize(test.input)
+      {result, _} = Parser.parse_program(tokens)
+      assert result == :error
+    end)
+  end
 end

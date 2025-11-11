@@ -1,4 +1,4 @@
-defmodule Lexer.Lexer do
+defmodule Lexer do
   alias Lexer.Token
 
   def tokenize(input) do
